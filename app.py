@@ -105,7 +105,7 @@ def send(user_id):
     link = request.host_url + f"track?id={user.id}"
 
     try:
-        send_phishing_email(mail, user, link)
+       send_phishing_email(user, link)
         flash("Email sent!", "success")
     except Exception:
         flash("Email failed to send", "error")
