@@ -1,0 +1,18 @@
+body {
+    font-family: Arial;
+    background: #f1f5f9;
+    margin: 0;
+}
+
+.container {
+    width: 900px;
+    margin: auto;
+    padding: 40px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
