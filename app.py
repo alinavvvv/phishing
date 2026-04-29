@@ -42,10 +42,9 @@ class Click(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # =====================
-# SAFE DB INIT (IMPORTANT FIX)
+# INIT DB (SAFE - ONLY ON START)
 # =====================
-@app.before_request
-def init_db():
+with app.app_context():
     db.create_all()
 
 # =====================
@@ -98,8 +97,7 @@ def users():
             <td>{u.risk_score}</td>
             <td>{level}</td>
             <td>
-                <a href="/send_email/{u.id}?lang=bg">BG</a> |
-                <a href="/send_email/{u.id}?lang=en">EN</a>
+                <a href="/send_email/{u.id}">Send</a>
             </td>
         </tr>
         """
@@ -107,6 +105,7 @@ def users():
     return f"""
     <h1>👥 Users</h1>
     <a href="/add_user">Add User</a><br><br>
+
     <table border="1" cellpadding="10">
         <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Send</th></tr>
         {rows}
@@ -139,7 +138,7 @@ def add_user():
     """
 
 # =====================
-# SEND EMAIL
+# SEND EMAIL (SAFE)
 # =====================
 @app.route("/send_email/<int:user_id>")
 def send_email(user_id):
@@ -150,20 +149,18 @@ def send_email(user_id):
     if not user:
         return "User not found"
 
-    lang = request.args.get("lang", "en")
-
-    link = f"{request.host_url}track?id={user_id}&lang={lang}"
-
-    msg = Message(
-        subject="Security Training",
-        recipients=[user.email],
-        html=f"<p>Training email</p><a href='{link}'>Open</a>"
-    )
+    link = f"{request.host_url}track?id={user_id}"
 
     try:
+        msg = Message(
+            subject="Security Training",
+            recipients=[user.email],
+            html=f"<p>Training email</p><a href='{link}'>Open</a>"
+        )
         mail.send(msg)
+
     except Exception as e:
-        return f"Email error: {e}"
+        return f"Email error (non-fatal): {e}"
 
     return redirect("/users")
 
@@ -194,7 +191,10 @@ def track():
 # =====================
 @app.route("/education")
 def education():
-    return "<h1>Security Training</h1><p>Awareness simulation.</p>"
+    return """
+    <h1>⚠ Security Training</h1>
+    <p>This was a phishing awareness simulation.</p>
+    """
 
 # =====================
 # DASHBOARD
@@ -213,7 +213,7 @@ def dashboard():
     """
 
 # =====================
-# RUN
+# RUN (LOCAL ONLY)
 # =====================
 if __name__ == "__main__":
     app.run()
