@@ -3,33 +3,45 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from datetime import datetime
 import os
+import logging
 
+# =====================
+# LOGGING (IMPORTANT)
+# =====================
+logging.basicConfig(level=logging.INFO)
+
+# =====================
+# APP INIT
+# =====================
 app = Flask(__name__)
 
-# =====================
-# CONFIG
-# =====================
-app.secret_key = os.environ.get("SECRET_KEY", "change-me")
+app.secret_key = os.environ.get("SECRET_KEY", "dev-key")
 
-# 🔥 POSTGRES ONLY (Render requirement)
+# =====================
+# DATABASE (SAFE FOR RENDER)
+# =====================
 DATABASE_URL = os.environ.get("DATABASE_URL")
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL or "sqlite:///local.db"
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///local.db"
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
 # =====================
-# MAIL (SAFE)
+# MAIL (SAFE INIT)
 # =====================
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_USERNAME")
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME", "")
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD", "")
+app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_USERNAME", "")
 
 mail = Mail(app)
 
@@ -48,7 +60,7 @@ class Click(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # =====================
-# SAFE INIT (ONLY ON START)
+# SAFE DB INIT
 # =====================
 with app.app_context():
     db.create_all()
@@ -58,7 +70,7 @@ with app.app_context():
 # =====================
 @app.route("/")
 def home():
-    return "<h1>🛡 SOC Training Platform</h1><a href='/login'>Login</a>"
+    return "<h1>🛡 SOC Training System</h1><a href='/login'>Login</a>"
 
 # =====================
 # LOGIN
@@ -70,6 +82,7 @@ def login():
         return redirect("/dashboard")
 
     return """
+    <h2>Login</h2>
     <form method="post">
         <input name="username">
         <input name="password" type="password">
@@ -107,6 +120,7 @@ def users():
 
     return f"""
     <h1>Users</h1>
+    <a href="/add_user">Add User</a>
     <table border="1">
         <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Action</th></tr>
         {rows}
@@ -124,7 +138,7 @@ def add_user():
     if request.method == "POST":
         email = request.form["email"]
 
-        if not User.query.filter_by(email=email).first():
+        if email and not User.query.filter_by(email=email).first():
             db.session.add(User(email=email))
             db.session.commit()
 
@@ -138,7 +152,7 @@ def add_user():
     """
 
 # =====================
-# EMAIL (NON-BLOCKING SAFE)
+# SEND EMAIL (SAFE)
 # =====================
 @app.route("/send_email/<int:user_id>")
 def send_email(user_id):
@@ -147,21 +161,19 @@ def send_email(user_id):
 
     user = User.query.get(user_id)
     if not user:
-        return "not found"
+        return "User not found"
 
     link = f"{request.host_url}track?id={user_id}"
 
     try:
         msg = Message(
-            subject="Security Training",
+            subject="SOC Training Email",
             recipients=[user.email],
             html=f"<p>Training simulation</p><a href='{link}'>Open</a>"
         )
-
         mail.send(msg)
-
     except Exception as e:
-        print("MAIL ERROR:", e)
+        logging.error(f"EMAIL ERROR: {e}")
 
     return redirect("/users")
 
@@ -170,7 +182,12 @@ def send_email(user_id):
 # =====================
 @app.route("/track")
 def track():
-    user_id = int(request.args.get("id"))
+    user_id = request.args.get("id")
+
+    try:
+        user_id = int(user_id)
+    except:
+        return "Invalid"
 
     db.session.add(Click(user_id=user_id, ip=request.remote_addr))
 
@@ -192,11 +209,15 @@ def dashboard():
 
     clicks = Click.query.count()
 
-    return f"<h1>Dashboard</h1><p>Total clicks: {clicks}</p>"
+    return f"""
+    <h1>Dashboard</h1>
+    <p>Total clicks: {clicks}</p>
+    <a href="/users">Users</a>
+    """
 
 # =====================
-# RUN
+# RUN (LOCAL ONLY)
 # =====================
-   if __name__ == "__main__":
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
