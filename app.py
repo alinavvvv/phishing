@@ -1,50 +1,31 @@
 import os
-import logging
+from flask import Flask, request, redirect, session, render_template_string
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-from flask import Flask, request, redirect, session
-from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail, Message
-
-# =====================
-# LOGGING
-# =====================
-logging.basicConfig(level=logging.INFO)
-
-# =====================
-# APP INIT
-# =====================
 app = Flask(__name__)
+
+# =====================
+# CONFIG (IMPORTANT FOR RENDER)
+# =====================
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key")
 
-# =====================
-# DATABASE SAFE CONFIG
-# =====================
+# Fix DATABASE_URL safely
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# FIX for Render + SQLAlchemy
 if DATABASE_URL:
+    # Render sometimes gives postgres:// instead of postgresql://
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
-else:
-    DATABASE_URL = "sqlite:///local.db"
 
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+else:
+    # fallback so app NEVER crashes
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
-
-# =====================
-# MAIL SAFE INIT
-# =====================
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME", "")
-app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD", "")
-app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_USERNAME", "")
-
-mail = Mail(app)
 
 # =====================
 # MODELS
@@ -61,23 +42,20 @@ class Click(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # =====================
-# SAFE DB INIT
+# INIT DB
 # =====================
 with app.app_context():
-    try:
-        db.create_all()
-    except Exception as e:
-        logging.error(f"DB INIT ERROR: {e}")
+    db.create_all()
 
 # =====================
 # HOME
 # =====================
 @app.route("/")
 def home():
-    return "<h1>🛡 SOC Training System</h1><a href='/login'>Login</a>"
+    return "<h1>SOC Training System</h1><a href='/login'>Login</a>"
 
 # =====================
-# LOGIN
+# LOGIN (dummy)
 # =====================
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -86,10 +64,9 @@ def login():
         return redirect("/dashboard")
 
     return """
-    <h2>Login</h2>
     <form method="post">
-        <input name="username">
-        <input name="password" type="password">
+        <input name="username" placeholder="admin"><br>
+        <input name="password" type="password"><br>
         <button>Login</button>
     </form>
     """
@@ -118,31 +95,17 @@ def users():
     if not session.get("admin"):
         return redirect("/login")
 
-    all_users = User.query.all()
+    users = User.query.all()
 
     rows = ""
-    for u in all_users:
-        level = "LOW"
-        if u.risk_score > 5:
-            level = "HIGH"
-        elif u.risk_score > 2:
-            level = "MEDIUM"
-
-        rows += f"""
-        <tr>
-            <td>{u.id}</td>
-            <td>{u.email}</td>
-            <td>{u.risk_score}</td>
-            <td>{level}</td>
-            <td><a href="/send_email/{u.id}">send</a></td>
-        </tr>
-        """
+    for u in users:
+        rows += f"<tr><td>{u.id}</td><td>{u.email}</td><td>{u.risk_score}</td></tr>"
 
     return f"""
     <h1>Users</h1>
-    <a href="/add_user">Add User</a>
-    <table border="1" cellpadding="8">
-        <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Action</th></tr>
+    <a href="/add_user">Add user</a>
+    <table border="1">
+        <tr><th>ID</th><th>Email</th><th>Risk</th></tr>
         {rows}
     </table>
     """
@@ -166,40 +129,13 @@ def add_user():
 
     return """
     <form method="post">
-        <input name="email">
+        <input name="email" placeholder="email">
         <button>Add</button>
     </form>
     """
 
 # =====================
-# SEND EMAIL
-# =====================
-@app.route("/send_email/<int:user_id>")
-def send_email(user_id):
-    if not session.get("admin"):
-        return redirect("/login")
-
-    user = User.query.get(user_id)
-    if not user:
-        return "User not found"
-
-    link = f"{request.host_url}track?id={user_id}"
-
-    try:
-        msg = Message(
-            subject="Security Training",
-            recipients=[user.email],
-            html=f"<p>Training email</p><a href='{link}'>Open</a>"
-        )
-        mail.send(msg)
-    except Exception as e:
-        logging.error(f"EMAIL ERROR: {e}")
-        return "Email failed"
-
-    return redirect("/users")
-
-# =====================
-# TRACK
+# TRACK (SAFE)
 # =====================
 @app.route("/track")
 def track():
@@ -208,7 +144,7 @@ def track():
     try:
         user_id = int(user_id)
     except:
-        return "Invalid"
+        return "invalid"
 
     db.session.add(Click(user_id=user_id, ip=request.remote_addr))
 
@@ -218,7 +154,7 @@ def track():
 
     db.session.commit()
 
-    return "<h1>Training complete</h1>"
+    return "<h1>OK tracked</h1>"
 
 # =====================
 # RUN (RENDER SAFE)
