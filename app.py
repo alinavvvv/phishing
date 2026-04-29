@@ -98,11 +98,11 @@ def send(user_id):
     link = request.host_url + f"track?id={user.id}"
 
     try:
-       send_phishing_email(user, link)
-        print("EMAIL SENT OK")
+        send_phishing_email(user, link)
+        print("SEND BUTTON CLICKED")
 
     except Exception as e:
-        print("EMAIL ERROR:", e)
+        print("SEND ERROR:", e)
 
     return redirect(url_for("users"))
 
