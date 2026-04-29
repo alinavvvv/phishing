@@ -15,24 +15,27 @@ logging.basicConfig(level=logging.INFO)
 # APP INIT
 # =====================
 app = Flask(__name__)
-
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key")
 
 # =====================
-# DATABASE (Render safe)
+# DATABASE SAFE CONFIG
 # =====================
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
+# FIX for Render + SQLAlchemy
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
+else:
+    DATABASE_URL = "sqlite:///local.db"
 
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL or "sqlite:///local.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
 # =====================
-# MAIL (SAFE INIT)
+# MAIL SAFE INIT
 # =====================
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
@@ -74,7 +77,7 @@ def home():
     return "<h1>🛡 SOC Training System</h1><a href='/login'>Login</a>"
 
 # =====================
-# LOGIN (NO AUTH SYSTEM - DEMO)
+# LOGIN
 # =====================
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -85,8 +88,8 @@ def login():
     return """
     <h2>Login</h2>
     <form method="post">
-        <input name="username" placeholder="user"><br><br>
-        <input name="password" type="password"><br><br>
+        <input name="username">
+        <input name="password" type="password">
         <button>Login</button>
     </form>
     """
@@ -102,7 +105,7 @@ def dashboard():
     clicks = Click.query.count()
 
     return f"""
-    <h1>📊 Dashboard</h1>
+    <h1>Dashboard</h1>
     <p>Total clicks: {clicks}</p>
     <a href="/users">Users</a>
     """
@@ -139,9 +142,7 @@ def users():
     <h1>Users</h1>
     <a href="/add_user">Add User</a>
     <table border="1" cellpadding="8">
-        <tr>
-            <th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Action</th>
-        </tr>
+        <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Action</th></tr>
         {rows}
     </table>
     """
@@ -164,15 +165,14 @@ def add_user():
         return redirect("/users")
 
     return """
-    <h2>Add User</h2>
     <form method="post">
-        <input name="email" placeholder="email">
+        <input name="email">
         <button>Add</button>
     </form>
     """
 
 # =====================
-# SEND EMAIL (SAFE)
+# SEND EMAIL
 # =====================
 @app.route("/send_email/<int:user_id>")
 def send_email(user_id):
@@ -187,9 +187,9 @@ def send_email(user_id):
 
     try:
         msg = Message(
-            subject="SOC Training Notification",
+            subject="Security Training",
             recipients=[user.email],
-            html=f"<p>Security awareness training</p><a href='{link}'>Open</a>"
+            html=f"<p>Training email</p><a href='{link}'>Open</a>"
         )
         mail.send(msg)
     except Exception as e:
@@ -218,7 +218,7 @@ def track():
 
     db.session.commit()
 
-    return "<h1>Training completed</h1>"
+    return "<h1>Training complete</h1>"
 
 # =====================
 # RUN (RENDER SAFE)
