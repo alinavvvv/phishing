@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from config import Config
 from models import db, User, Click
 from flask_mail import Mail
-from email_service import send_training_email
+from email_service import send_phishing_email  # ✅ ОПРАВЕНО
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -13,13 +13,6 @@ mail = Mail(app)
 # ---------------- INIT DB ----------------
 with app.app_context():
     db.create_all()
-
-
-# ---------------- HOME ----------------
-@app.route("/")
-def home():
-    return redirect(url_for("login"))
-
 
 # ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
@@ -82,17 +75,22 @@ def add_user():
             flash("User already exists", "warning")
             return redirect(url_for("users"))
 
-        user = User(email=email)
-        db.session.add(user)
-        db.session.commit()
+        try:
+            user = User(email=email, risk_score=0)  # ✅ добавих default
+            db.session.add(user)
+            db.session.commit()
+            flash("User added successfully", "success")
 
-        flash("User added successfully", "success")
+        except Exception:
+            db.session.rollback()
+            flash("Database error", "error")
+
         return redirect(url_for("users"))
 
     return render_template("add_user.html")
 
 
-# ---------------- TRAINING EMAIL (SAFE) ----------------
+# ---------------- SEND EMAIL ----------------
 @app.route("/send/<int:user_id>")
 def send(user_id):
     if not session.get("admin"):
@@ -104,38 +102,42 @@ def send(user_id):
         flash("User not found", "error")
         return redirect(url_for("users"))
 
+    link = request.host_url + f"track?id={user.id}"
+
     try:
-        send_training_email(mail, user)
-        flash(f"Email sent to {user.email}", "success")
-    except Exception as e:
+        send_phishing_email(mail, user, link)
+        flash("Email sent!", "success")
+    except Exception:
         flash("Email failed to send", "error")
-        print(e)
 
     return redirect(url_for("users"))
 
 
-# ---------------- TRACK CLICK (SIMULATION ONLY) ----------------
+# ---------------- TRACK CLICK ----------------
 @app.route("/track")
 def track():
     user_id = request.args.get("id")
 
     user = User.query.get(user_id)
-
     if user:
         user.risk_score = (user.risk_score or 0) + 1
 
-    if user_id:
-        db.session.add(Click(user_id=user_id))
-
+    db.session.add(Click(user_id=user_id))
     db.session.commit()
 
     return redirect(url_for("education"))
 
 
-# ---------------- EDUCATION ----------------
+# ---------------- EDUCATION PAGE ----------------
 @app.route("/education")
 def education():
     return render_template("education.html")
+
+
+# ---------------- HOME ----------------
+@app.route("/")
+def home():
+    return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
