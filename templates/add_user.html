@@ -1,18 +1,10 @@
-@app.route("/add_user", methods=["GET", "POST"])
-def add_user():
-    if request.method == "POST":
-        email = request.form["email"]
+<h1>Add User</h1>
 
-        # ✅ FIX: проверка за дублиране
-        existing_user = User.query.filter_by(email=email).first()
+{% if error %}
+<p style="color:red;">{{ error }}</p>
+{% endif %}
 
-        if existing_user:
-            return "User already exists", 400
-
-        if email:
-            db.session.add(User(email=email))
-            db.session.commit()
-
-        return redirect("/users")
-
-    return render_template("add_user.html")
+<form method="post">
+    <input name="email" placeholder="email">
+    <button>Add User</button>
+</form>
