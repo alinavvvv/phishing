@@ -6,7 +6,7 @@
 
 <a href="{{ url_for('add_user') }}">+ Add User</a>
 
-<table border="1" cellpadding="8" cellspacing="0" style="margin-top:20px;">
+<table style="margin-top:20px; width:100%; border-collapse:collapse;">
     <tr>
         <th>ID</th>
         <th>Email</th>
@@ -18,19 +18,12 @@
     <tr>
         <td>{{ u.id }}</td>
         <td>{{ u.email }}</td>
-
-        <!-- FIX: ако няма risk_score няма да крашне -->
-        <td>{{ u.risk_score | default(0) }}</td>
-
+        <td>{{ u.risk_score or 0 }}</td>
         <td>
-            <!-- FIXED SEND BUTTON -->
-            <a href="{{ url_for('send', user_id=u.id) }}">
-                Send
-            </a>
+            <a href="{{ url_for('send', user_id=u.id) }}">Send</a>
         </td>
     </tr>
     {% endfor %}
-
 </table>
 
 {% endblock %}
