@@ -1,97 +1,121 @@
-import os
-from flask import Flask, render_template, request, redirect, session
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from config import Config
+from models import db, User, Click
 from flask_mail import Mail
 
 app = Flask(__name__)
+app.config.from_object(Config)
 
-# SECRET KEY
-app.secret_key = os.environ.get("SECRET_KEY", "dev-key")
-
-# DATABASE (safe fallback)
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
-
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL or "sqlite:///local.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db = SQLAlchemy(app)
-
-# MAIL (optional)
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
-
+db.init_app(app)
 mail = Mail(app)
 
-# MODELS
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True)
-
-class Click(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer)
-
+# ---------------- INIT DB ----------------
 with app.app_context():
     db.create_all()
 
-# HOME
-@app.route("/")
-def home():
-    return redirect("/login")
-
-# LOGIN
+# ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        # simple admin login (можеш после да го направим реален)
         session["admin"] = True
-        return redirect("/dashboard")
+        return redirect(url_for("dashboard"))
+
     return render_template("login.html")
 
-# DASHBOARD
+
+# ---------------- LOGOUT ----------------
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ---------------- DASHBOARD ----------------
 @app.route("/dashboard")
 def dashboard():
     if not session.get("admin"):
-        return redirect("/login")
-    return render_template("dashboard.html")
+        return redirect(url_for("login"))
 
-# USERS
+    users_count = User.query.count()
+    clicks_count = Click.query.count()
+
+    return render_template(
+        "dashboard.html",
+        users=users_count,
+        clicks=clicks_count
+    )
+
+
+# ---------------- USERS ----------------
 @app.route("/users")
 def users():
     if not session.get("admin"):
-        return redirect("/login")
+        return redirect(url_for("login"))
 
-    users = User.query.all()
-    return render_template("users.html", users=users)
+    users_list = User.query.all()
+    return render_template("users.html", users=users_list)
 
-# ADD USER
+
+# ---------------- ADD USER ----------------
 @app.route("/add_user", methods=["GET", "POST"])
 def add_user():
-    error = None
+    if not session.get("admin"):
+        return redirect(url_for("login"))
 
     if request.method == "POST":
-        email = request.form["email"]
+        email = request.form.get("email")
 
-        if User.query.filter_by(email=email).first():
-            error = "This user already exists"
-        else:
-            db.session.add(User(email=email))
+        if not email:
+            flash("Email is required", "error")
+            return redirect(url_for("add_user"))
+
+        existing = User.query.filter_by(email=email).first()
+        if existing:
+            flash("User already exists", "warning")
+            return redirect(url_for("users"))
+
+        try:
+            user = User(email=email)
+            db.session.add(user)
             db.session.commit()
-            return redirect("/users")
+            flash("User added successfully", "success")
 
-    return render_template("add_user.html", error=error)
+        except Exception:
+            db.session.rollback()
+            flash("Database error", "error")
 
-# EDUCATION
+        return redirect(url_for("users"))
+
+    return render_template("add_user.html")
+
+
+# ---------------- TRACK CLICK (SAFE SIMULATION) ----------------
+@app.route("/track")
+def track():
+    user_id = request.args.get("id")
+
+    user = User.query.get(user_id)
+    if user:
+        user.risk_score = (user.risk_score or 0) + 1
+
+    db.session.add(Click(user_id=user_id))
+    db.session.commit()
+
+    return redirect(url_for("education"))
+
+
+# ---------------- EDUCATION PAGE ----------------
 @app.route("/education")
 def education():
     return render_template("education.html")
 
-# RUN
+
+# ---------------- HOME REDIRECT ----------------
+@app.route("/")
+def home():
+    return redirect(url_for("login"))
+
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
