@@ -11,21 +11,25 @@ app = Flask(__name__)
 # =====================
 app.secret_key = os.environ.get("SECRET_KEY", "change-me")
 
-# 🔥 PRODUCTION DB (POSTGRES)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL").replace("postgres://", "postgresql://")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# 🔥 POSTGRES ONLY (Render requirement)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
+
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL or "sqlite:///local.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
 # =====================
-# MAIL
+# MAIL (SAFE)
 # =====================
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME")
-app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD")
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get("MAIL_USERNAME")
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
+app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_USERNAME")
 
 mail = Mail(app)
 
@@ -44,7 +48,7 @@ class Click(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # =====================
-# SAFE INIT (PRODUCTION WAY)
+# SAFE INIT (ONLY ON START)
 # =====================
 with app.app_context():
     db.create_all()
@@ -83,7 +87,7 @@ def users():
 
     users = User.query.all()
 
-    html = ""
+    rows = ""
     for u in users:
         level = "LOW"
         if u.risk_score > 5:
@@ -91,7 +95,7 @@ def users():
         elif u.risk_score > 2:
             level = "MEDIUM"
 
-        html += f"""
+        rows += f"""
         <tr>
             <td>{u.id}</td>
             <td>{u.email}</td>
@@ -105,7 +109,7 @@ def users():
     <h1>Users</h1>
     <table border="1">
         <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Action</th></tr>
-        {html}
+        {rows}
     </table>
     """
 
@@ -134,7 +138,7 @@ def add_user():
     """
 
 # =====================
-# SEND EMAIL (SAFE + NON-BLOCKING STYLE)
+# EMAIL (NON-BLOCKING SAFE)
 # =====================
 @app.route("/send_email/<int:user_id>")
 def send_email(user_id):
@@ -151,9 +155,11 @@ def send_email(user_id):
         msg = Message(
             subject="Security Training",
             recipients=[user.email],
-            html=f"<a href='{link}'>Open training</a>"
+            html=f"<p>Training simulation</p><a href='{link}'>Open</a>"
         )
+
         mail.send(msg)
+
     except Exception as e:
         print("MAIL ERROR:", e)
 
@@ -186,10 +192,10 @@ def dashboard():
 
     clicks = Click.query.count()
 
-    return f"<h1>Dashboard</h1><p>Clicks: {clicks}</p>"
+    return f"<h1>Dashboard</h1><p>Total clicks: {clicks}</p>"
 
 # =====================
-# RUN (LOCAL ONLY)
+# RUN
 # =====================
 if __name__ == "__main__":
     app.run()
