@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Users</h2>
+
+<table class="table table-striped mt-3">
+    <tr>
+        <th>ID</th>
+        <th>Email</th>
+        <th>Risk</th>
+        <th>Level</th>
+        <th>Action</th>
+    </tr>
+
+    {% for u in users %}
+    <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.risk_score }}</td>
+        <td>
+            {% if u.risk_score > 5 %}
+                🔴 HIGH
+            {% elif u.risk_score > 2 %}
+                🟡 MEDIUM
+            {% else %}
+                🟢 LOW
+            {% endif %}
+        </td>
+        <td>
+            <a class="btn btn-sm btn-primary" href="/send_email/{{ u.id }}">Send Email</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
