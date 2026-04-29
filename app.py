@@ -16,7 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # =====================
-# EMAIL (GMAIL SMTP)
+# EMAIL
 # =====================
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -42,9 +42,10 @@ class Click(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # =====================
-# INIT DB SAFELY
+# SAFE DB INIT (IMPORTANT FIX)
 # =====================
-with app.app_context():
+@app.before_request
+def init_db():
     db.create_all()
 
 # =====================
@@ -106,11 +107,8 @@ def users():
     return f"""
     <h1>👥 Users</h1>
     <a href="/add_user">Add User</a><br><br>
-
     <table border="1" cellpadding="10">
-        <tr>
-            <th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Send</th>
-        </tr>
+        <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Send</th></tr>
         {rows}
     </table>
     """
@@ -135,13 +133,13 @@ def add_user():
     return """
     <h2>Add User</h2>
     <form method="post">
-        <input name="email" placeholder="email">
+        <input name="email">
         <button>Add</button>
     </form>
     """
 
 # =====================
-# SEND EMAIL (SAFE)
+# SEND EMAIL
 # =====================
 @app.route("/send_email/<int:user_id>")
 def send_email(user_id):
@@ -156,14 +154,16 @@ def send_email(user_id):
 
     link = f"{request.host_url}track?id={user_id}&lang={lang}"
 
-    subject = "Security Training"
-    body = f"<p>This is a training email.</p><a href='{link}'>Open</a>"
+    msg = Message(
+        subject="Security Training",
+        recipients=[user.email],
+        html=f"<p>Training email</p><a href='{link}'>Open</a>"
+    )
 
     try:
-        msg = Message(subject=subject, recipients=[user.email], html=body)
         mail.send(msg)
     except Exception as e:
-        return f"Email error: {str(e)}"
+        return f"Email error: {e}"
 
     return redirect("/users")
 
@@ -194,10 +194,7 @@ def track():
 # =====================
 @app.route("/education")
 def education():
-    return """
-    <h1>⚠ Security Training</h1>
-    <p>This was a phishing simulation for awareness.</p>
-    """
+    return "<h1>Security Training</h1><p>Awareness simulation.</p>"
 
 # =====================
 # DASHBOARD
@@ -216,7 +213,7 @@ def dashboard():
     """
 
 # =====================
-# RUN (LOCAL ONLY)
+# RUN
 # =====================
 if __name__ == "__main__":
     app.run()
