@@ -103,7 +103,13 @@ def send(user_id):
         flash("User not found", "error")
         return redirect(url_for("users"))
 
-    flash(f"Training email simulated for {user.email}", "success")
+    try:
+        send_training_email(mail, user)
+        flash(f"Email sent to {user.email}", "success")
+    except Exception as e:
+        flash("Email failed to send", "error")
+        print(e)
+
     return redirect(url_for("users"))
 
 
