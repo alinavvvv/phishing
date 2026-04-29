@@ -93,24 +93,25 @@ def add_user():
 # ---------------- SEND EMAIL ----------------
 @app.route("/send/<int:user_id>")
 def send(user_id):
+    print("SEND BUTTON CLICKED")  
+
     if not session.get("admin"):
         return redirect(url_for("login"))
 
     user = User.query.get(user_id)
 
     if not user:
-        flash("User not found", "error")
-        return redirect(url_for("users"))
+        return "User not found"
 
     link = request.host_url + f"track?id={user.id}"
 
     try:
         send_phishing_email(mail, user, link)
-        flash("Email sent!", "success")
+        print("EMAIL FUNCTION CALLED")  
     except Exception as e:
-        flash(f"Error: {str(e)}", "error")
+        print("ERROR:", e)
 
-    return redirect(url_for("users"))
+    return "OK"
 # ---------------- TRACK CLICK ----------------
 @app.route("/track")
 def track():
