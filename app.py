@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from config import Config
 from models import db, User, Click
 from flask_mail import Mail
+from email_service import send_training_email
 
 app = Flask(__name__)
 app.config.from_object(Config)
