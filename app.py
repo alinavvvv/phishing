@@ -72,14 +72,19 @@ def users():
 # ADD USER
 @app.route("/add_user", methods=["GET", "POST"])
 def add_user():
+    error = None
+
     if request.method == "POST":
         email = request.form["email"]
-        if email:
+
+        if User.query.filter_by(email=email).first():
+            error = "This user already exists"
+        else:
             db.session.add(User(email=email))
             db.session.commit()
-        return redirect("/users")
+            return redirect("/users")
 
-    return render_template("add_user.html")
+    return render_template("add_user.html", error=error)
 
 # EDUCATION
 @app.route("/education")
