@@ -91,27 +91,21 @@ def add_user():
 
 
 # ---------------- SEND EMAIL ----------------
-@app.route("/send/<int:user_id>", endpoint="send")
+@app.route("/send/<int:user_id>")
 def send(user_id):
-    print("SEND BUTTON CLICKED")  
-
-    if not session.get("admin"):
-        return redirect(url_for("login"))
-
     user = User.query.get(user_id)
-
-    if not user:
-        return "User not found"
 
     link = request.host_url + f"track?id={user.id}"
 
     try:
         send_phishing_email(mail, user, link)
-        print("EMAIL FUNCTION CALLED")  
-    except Exception as e:
-        print("ERROR:", e)
+        print("EMAIL SENT OK")
 
-    return "OK"
+    except Exception as e:
+        print("EMAIL ERROR:", e)
+
+    return redirect(url_for("users"))
+
 # ---------------- TRACK CLICK ----------------
 @app.route("/track")
 def track():
