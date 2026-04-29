@@ -1,33 +1,27 @@
-from flask_mail import Message
+import requests
+import os
 
-def send_phishing_email(mail, user, link):
-    html = f"""
-    <div style="font-family:Arial;background:#f8fafc;padding:20px;">
-        <div style="max-width:600px;margin:auto;background:white;padding:30px;border-radius:10px;">
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 
-            <h2 style="color:#dc2626;">⚠ Security Alert</h2>
+def send_phishing_email(user, link):
+    url = "https://api.sendgrid.com/v3/mail/send"
 
-            <p>We detected unusual login activity on your account.</p>
+    headers = {
+        "Authorization": f"Bearer {SENDGRID_API_KEY}",
+        "Content-Type": "application/json"
+    }
 
-            <p>Please verify your account immediately to avoid suspension.</p>
+    data = {
+        "personalizations": [{
+            "to": [{"email": user.email}]
+        }],
+        "from": {"email": os.environ.get("MAIL_DEFAULT_SENDER")},
+        "subject": "Security Awareness Training",
+        "content": [{
+            "type": "text/html",
+            "value": f"<a href='{link}'>Verify account</a>"
+        }]
+    }
 
-            <a href="{link}"
-               style="display:inline-block;margin-top:15px;
-               background:#2563eb;color:white;padding:12px 20px;
-               text-decoration:none;border-radius:6px;">
-               Verify Account
-            </a>
-
-            <hr>
-            <small>Security Awareness Training System</small>
-        </div>
-    </div>
-    """
-
-    msg = Message(
-        subject="⚠ Security Awareness Training",
-        recipients=[user.email],
-        html=html
-    )
-
-    mail.send(msg)
+    r = requests.post(url, json=data, headers=headers)
+    print("SENDGRID STATUS:", r.status_code, r.text)
