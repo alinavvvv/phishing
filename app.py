@@ -5,18 +5,20 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "soc-final")
 
 # =====================
-# DATABASE
+# CONFIG
 # =====================
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///phishing.db'
+app.secret_key = os.environ.get("SECRET_KEY", "change-me")
+
+# 🔥 PRODUCTION DB (POSTGRES)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL").replace("postgres://", "postgresql://")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 # =====================
-# EMAIL
+# MAIL
 # =====================
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -42,7 +44,7 @@ class Click(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 # =====================
-# INIT DB (SAFE - ONLY ON START)
+# SAFE INIT (PRODUCTION WAY)
 # =====================
 with app.app_context():
     db.create_all()
@@ -52,7 +54,7 @@ with app.app_context():
 # =====================
 @app.route("/")
 def home():
-    return "<h1>🛡 SOC Training System</h1><a href='/login'>Admin Login</a>"
+    return "<h1>🛡 SOC Training Platform</h1><a href='/login'>Login</a>"
 
 # =====================
 # LOGIN
@@ -64,10 +66,9 @@ def login():
         return redirect("/dashboard")
 
     return """
-    <h2>Admin Login</h2>
     <form method="post">
-        <input name="username"><br><br>
-        <input name="password" type="password"><br><br>
+        <input name="username">
+        <input name="password" type="password">
         <button>Login</button>
     </form>
     """
@@ -80,35 +81,31 @@ def users():
     if not session.get("admin"):
         return redirect("/login")
 
-    all_users = User.query.all()
+    users = User.query.all()
 
-    rows = ""
-    for u in all_users:
-        level = "🟢 LOW"
+    html = ""
+    for u in users:
+        level = "LOW"
         if u.risk_score > 5:
-            level = "🔴 HIGH"
+            level = "HIGH"
         elif u.risk_score > 2:
-            level = "🟡 MEDIUM"
+            level = "MEDIUM"
 
-        rows += f"""
+        html += f"""
         <tr>
             <td>{u.id}</td>
             <td>{u.email}</td>
             <td>{u.risk_score}</td>
             <td>{level}</td>
-            <td>
-                <a href="/send_email/{u.id}">Send</a>
-            </td>
+            <td><a href="/send_email/{u.id}">send</a></td>
         </tr>
         """
 
     return f"""
-    <h1>👥 Users</h1>
-    <a href="/add_user">Add User</a><br><br>
-
-    <table border="1" cellpadding="10">
-        <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Send</th></tr>
-        {rows}
+    <h1>Users</h1>
+    <table border="1">
+        <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Action</th></tr>
+        {html}
     </table>
     """
 
@@ -130,7 +127,6 @@ def add_user():
         return redirect("/users")
 
     return """
-    <h2>Add User</h2>
     <form method="post">
         <input name="email">
         <button>Add</button>
@@ -138,7 +134,7 @@ def add_user():
     """
 
 # =====================
-# SEND EMAIL (SAFE)
+# SEND EMAIL (SAFE + NON-BLOCKING STYLE)
 # =====================
 @app.route("/send_email/<int:user_id>")
 def send_email(user_id):
@@ -147,7 +143,7 @@ def send_email(user_id):
 
     user = User.query.get(user_id)
     if not user:
-        return "User not found"
+        return "not found"
 
     link = f"{request.host_url}track?id={user_id}"
 
@@ -155,12 +151,11 @@ def send_email(user_id):
         msg = Message(
             subject="Security Training",
             recipients=[user.email],
-            html=f"<p>Training email</p><a href='{link}'>Open</a>"
+            html=f"<a href='{link}'>Open training</a>"
         )
         mail.send(msg)
-
     except Exception as e:
-        return f"Email error (non-fatal): {e}"
+        print("MAIL ERROR:", e)
 
     return redirect("/users")
 
@@ -169,12 +164,7 @@ def send_email(user_id):
 # =====================
 @app.route("/track")
 def track():
-    user_id = request.args.get("id")
-
-    try:
-        user_id = int(user_id)
-    except:
-        return "Invalid"
+    user_id = int(request.args.get("id"))
 
     db.session.add(Click(user_id=user_id, ip=request.remote_addr))
 
@@ -184,17 +174,7 @@ def track():
 
     db.session.commit()
 
-    return redirect("/education")
-
-# =====================
-# EDUCATION
-# =====================
-@app.route("/education")
-def education():
-    return """
-    <h1>⚠ Security Training</h1>
-    <p>This was a phishing awareness simulation.</p>
-    """
+    return "<h1>Training page</h1>"
 
 # =====================
 # DASHBOARD
@@ -206,11 +186,7 @@ def dashboard():
 
     clicks = Click.query.count()
 
-    return f"""
-    <h1>📊 Dashboard</h1>
-    <p>Total clicks: {clicks}</p>
-    <a href="/users">Users</a>
-    """
+    return f"<h1>Dashboard</h1><p>Clicks: {clicks}</p>"
 
 # =====================
 # RUN (LOCAL ONLY)
