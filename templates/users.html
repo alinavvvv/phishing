@@ -4,34 +4,33 @@
 
 <h2>Users</h2>
 
-<table class="table table-striped mt-3">
+<a href="{{ url_for('add_user') }}">+ Add User</a>
+
+<table border="1" cellpadding="8" cellspacing="0" style="margin-top:20px;">
     <tr>
         <th>ID</th>
         <th>Email</th>
-        <th>Risk</th>
-        <th>Level</th>
-        <th>Action</th>
+        <th>Risk Score</th>
+        <th>Actions</th>
     </tr>
 
     {% for u in users %}
     <tr>
         <td>{{ u.id }}</td>
         <td>{{ u.email }}</td>
-        <td>{{ u.risk_score }}</td>
+
+        <!-- FIX: ако няма risk_score няма да крашне -->
+        <td>{{ u.risk_score | default(0) }}</td>
+
         <td>
-            {% if u.risk_score > 5 %}
-                🔴 HIGH
-            {% elif u.risk_score > 2 %}
-                🟡 MEDIUM
-            {% else %}
-                🟢 LOW
-            {% endif %}
-        </td>
-        <td>
-            <a class="btn btn-sm btn-primary" href="/send_email/{{ u.id }}">Send Email</a>
+            <!-- FIXED SEND BUTTON -->
+            <a href="{{ url_for('send', user_id=u.id) }}">
+                Send
+            </a>
         </td>
     </tr>
     {% endfor %}
+
 </table>
 
 {% endblock %}
