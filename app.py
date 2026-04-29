@@ -1,12 +1,13 @@
+import os
+import logging
+from datetime import datetime
+
 from flask import Flask, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
-from datetime import datetime
-import os
-import logging
 
 # =====================
-# LOGGING (IMPORTANT)
+# LOGGING
 # =====================
 logging.basicConfig(level=logging.INFO)
 
@@ -18,17 +19,14 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-key")
 
 # =====================
-# DATABASE (SAFE FOR RENDER)
+# DATABASE (Render safe)
 # =====================
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-if DATABASE_URL:
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
-    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
-else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///local.db"
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL or "sqlite:///local.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -63,7 +61,10 @@ class Click(db.Model):
 # SAFE DB INIT
 # =====================
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        logging.error(f"DB INIT ERROR: {e}")
 
 # =====================
 # HOME
@@ -73,7 +74,7 @@ def home():
     return "<h1>🛡 SOC Training System</h1><a href='/login'>Login</a>"
 
 # =====================
-# LOGIN
+# LOGIN (NO AUTH SYSTEM - DEMO)
 # =====================
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -84,10 +85,26 @@ def login():
     return """
     <h2>Login</h2>
     <form method="post">
-        <input name="username">
-        <input name="password" type="password">
+        <input name="username" placeholder="user"><br><br>
+        <input name="password" type="password"><br><br>
         <button>Login</button>
     </form>
+    """
+
+# =====================
+# DASHBOARD
+# =====================
+@app.route("/dashboard")
+def dashboard():
+    if not session.get("admin"):
+        return redirect("/login")
+
+    clicks = Click.query.count()
+
+    return f"""
+    <h1>📊 Dashboard</h1>
+    <p>Total clicks: {clicks}</p>
+    <a href="/users">Users</a>
     """
 
 # =====================
@@ -98,10 +115,10 @@ def users():
     if not session.get("admin"):
         return redirect("/login")
 
-    users = User.query.all()
+    all_users = User.query.all()
 
     rows = ""
-    for u in users:
+    for u in all_users:
         level = "LOW"
         if u.risk_score > 5:
             level = "HIGH"
@@ -121,8 +138,10 @@ def users():
     return f"""
     <h1>Users</h1>
     <a href="/add_user">Add User</a>
-    <table border="1">
-        <tr><th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Action</th></tr>
+    <table border="1" cellpadding="8">
+        <tr>
+            <th>ID</th><th>Email</th><th>Risk</th><th>Level</th><th>Action</th>
+        </tr>
         {rows}
     </table>
     """
@@ -145,8 +164,9 @@ def add_user():
         return redirect("/users")
 
     return """
+    <h2>Add User</h2>
     <form method="post">
-        <input name="email">
+        <input name="email" placeholder="email">
         <button>Add</button>
     </form>
     """
@@ -167,13 +187,14 @@ def send_email(user_id):
 
     try:
         msg = Message(
-            subject="SOC Training Email",
+            subject="SOC Training Notification",
             recipients=[user.email],
-            html=f"<p>Training simulation</p><a href='{link}'>Open</a>"
+            html=f"<p>Security awareness training</p><a href='{link}'>Open</a>"
         )
         mail.send(msg)
     except Exception as e:
         logging.error(f"EMAIL ERROR: {e}")
+        return "Email failed"
 
     return redirect("/users")
 
@@ -197,28 +218,11 @@ def track():
 
     db.session.commit()
 
-    return "<h1>Training page</h1>"
+    return "<h1>Training completed</h1>"
 
 # =====================
-# DASHBOARD
-# =====================
-@app.route("/dashboard")
-def dashboard():
-    if not session.get("admin"):
-        return redirect("/login")
-
-    clicks = Click.query.count()
-
-    return f"""
-    <h1>Dashboard</h1>
-    <p>Total clicks: {clicks}</p>
-    <a href="/users">Users</a>
-    """
-
-# =====================
-# RUN (LOCAL ONLY)
+# RUN (RENDER SAFE)
 # =====================
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
