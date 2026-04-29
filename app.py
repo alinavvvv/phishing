@@ -91,7 +91,7 @@ def add_user():
 
 
 # ---------------- SEND EMAIL ----------------
-@app.route("/send/<int:user_id>")
+@app.route("/send/<int:user_id>", endpoint="send")
 def send(user_id):
     print("SEND BUTTON CLICKED")  
 
