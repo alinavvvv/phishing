@@ -98,7 +98,7 @@ def send(user_id):
     link = request.host_url + f"track?id={user.id}"
 
     try:
-        send_phishing_email(mail, user, link)
+       send_phishing_email(user, link)
         print("EMAIL SENT OK")
 
     except Exception as e:
