@@ -105,14 +105,12 @@ def send(user_id):
     link = request.host_url + f"track?id={user.id}"
 
     try:
-       send_phishing_email(user, link)
+        send_phishing_email(mail, user, link)
         flash("Email sent!", "success")
-    except Exception:
-        flash("Email failed to send", "error")
+    except Exception as e:
+        flash(f"Error: {str(e)}", "error")
 
     return redirect(url_for("users"))
-
-
 # ---------------- TRACK CLICK ----------------
 @app.route("/track")
 def track():
