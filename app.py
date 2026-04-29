@@ -13,11 +13,17 @@ mail = Mail(app)
 with app.app_context():
     db.create_all()
 
+
+# ---------------- HOME ----------------
+@app.route("/")
+def home():
+    return redirect(url_for("login"))
+
+
 # ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        # simple admin login (можеш после да го направим реален)
         session["admin"] = True
         return redirect(url_for("dashboard"))
 
@@ -75,46 +81,54 @@ def add_user():
             flash("User already exists", "warning")
             return redirect(url_for("users"))
 
-        try:
-            user = User(email=email)
-            db.session.add(user)
-            db.session.commit()
-            flash("User added successfully", "success")
+        user = User(email=email)
+        db.session.add(user)
+        db.session.commit()
 
-        except Exception:
-            db.session.rollback()
-            flash("Database error", "error")
-
+        flash("User added successfully", "success")
         return redirect(url_for("users"))
 
     return render_template("add_user.html")
 
 
-# ---------------- TRACK CLICK (SAFE SIMULATION) ----------------
+# ---------------- TRAINING EMAIL (SAFE) ----------------
+@app.route("/send/<int:user_id>")
+def send(user_id):
+    if not session.get("admin"):
+        return redirect(url_for("login"))
+
+    user = User.query.get(user_id)
+
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for("users"))
+
+    flash(f"Training email simulated for {user.email}", "success")
+    return redirect(url_for("users"))
+
+
+# ---------------- TRACK CLICK (SIMULATION ONLY) ----------------
 @app.route("/track")
 def track():
     user_id = request.args.get("id")
 
     user = User.query.get(user_id)
+
     if user:
         user.risk_score = (user.risk_score or 0) + 1
 
-    db.session.add(Click(user_id=user_id))
+    if user_id:
+        db.session.add(Click(user_id=user_id))
+
     db.session.commit()
 
     return redirect(url_for("education"))
 
 
-# ---------------- EDUCATION PAGE ----------------
+# ---------------- EDUCATION ----------------
 @app.route("/education")
 def education():
     return render_template("education.html")
-
-
-# ---------------- HOME REDIRECT ----------------
-@app.route("/")
-def home():
-    return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
