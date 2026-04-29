@@ -1,27 +1,19 @@
-import requests
 import os
-
-SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 def send_phishing_email(user, link):
-    url = "https://api.sendgrid.com/v3/mail/send"
+    message = Mail(
+        from_email=os.environ.get("MAIL_DEFAULT_SENDER"),
+        to_emails=user.email,
+        subject="Security Awareness Training",
+        html_content=f"<a href='{link}'>Verify account</a>"
+    )
 
-    headers = {
-        "Authorization": f"Bearer {SENDGRID_API_KEY}",
-        "Content-Type": "application/json"
-    }
+    try:
+        sg = SendGridAPIClient(os.environ.get("SENDGRID_API_KEY"))
+        response = sg.send(message)
+        print("SendGrid status:", response.status_code)
 
-    data = {
-        "personalizations": [{
-            "to": [{"email": user.email}]
-        }],
-        "from": {"email": os.environ.get("MAIL_DEFAULT_SENDER")},
-        "subject": "Security Awareness Training",
-        "content": [{
-            "type": "text/html",
-            "value": f"<a href='{link}'>Verify account</a>"
-        }]
-    }
-
-    r = requests.post(url, json=data, headers=headers)
-    print("SENDGRID STATUS:", r.status_code, r.text)
+    except Exception as e:
+        print("EMAIL ERROR:", e)
