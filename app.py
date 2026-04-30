@@ -4,6 +4,7 @@ from models import db, User, Click
 from flask_mail import Mail
 from email_service import send_phishing_email
 from sqlalchemy import text
+import os
 
 app = Flask(__name__)
 app.config.from_object(Config)
