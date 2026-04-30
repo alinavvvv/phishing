@@ -109,6 +109,7 @@ def send(user_id):
     return redirect(url_for("users"))
 
 # ---------------- TRACK CLICK ----------------
+
 @app.route("/track")
 def track():
     user_id = request.args.get("id")
@@ -123,16 +124,20 @@ def track():
     if user:
         user.risk_score = (user.risk_score or 0) + 1
 
+        ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+
+        if ip and "," in ip:
+            ip = ip.split(",")[0].strip()
+
         click = Click(
             user_id=user.id,
-            ip=request.headers.get("X-Forwarded-For", request.remote_addr)
+            ip=ip
         )
 
         db.session.add(click)
         db.session.commit()
 
     return redirect(url_for("education"))
-
 # ---------------- CLICKS PAGE ----------------
 @app.route("/clicks")
 def clicks():
