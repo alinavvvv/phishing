@@ -29,9 +29,9 @@ def login():
         if username == admin_username and password == admin_password:
             session["admin"] = True
             return redirect(url_for("dashboard"))
-        else:
-            flash("Invalid username or password", "error")
-            return redirect(url_for("login"))
+
+        flash("Invalid username or password", "error")
+        return redirect(url_for("login"))
 
     return render_template("login.html")
 
