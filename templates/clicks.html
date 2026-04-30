@@ -11,16 +11,43 @@
         <th>Email</th>
         <th>IP</th>
         <th>Time</th>
+        <th>Risk Score</th>
+        <th>Status</th>
     </tr>
 
     {% for c in clicks %}
     <tr>
         <td>{{ c.id }}</td>
         <td>{{ c.user_id }}</td>
-        <td>{{ c.user.email if c.user else "Unknown" }}</td>
+
+        <td>
+            {{ c.user.email if c.user else "Unknown" }}
+        </td>
+
         <td>{{ c.ip or "N/A" }}</td>
+
         <td>
             {{ c.timestamp.strftime('%Y-%m-%d %H:%M:%S') if c.timestamp else "" }}
+        </td>
+
+        <!-- 🔥 Risk Score -->
+        <td style="font-weight:bold; color:
+            {% if c.user and c.user.risk_score > 2 %}
+                red
+            {% else %}
+                green
+            {% endif %}
+        ">
+            {{ c.user.risk_score if c.user else 0 }}
+        </td>
+
+        <!-- 🔥 Status -->
+        <td>
+            {% if c.user and c.user.risk_score > 2 %}
+                ⚠️ High Risk
+            {% else %}
+                ✅ Safe
+            {% endif %}
         </td>
     </tr>
     {% endfor %}
