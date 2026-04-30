@@ -20,8 +20,18 @@ with app.app_context():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        session["admin"] = True
-        return redirect(url_for("dashboard"))
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        admin_username = os.environ.get("ADMIN_USERNAME", "admin")
+        admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
+
+        if username == admin_username and password == admin_password:
+            session["admin"] = True
+            return redirect(url_for("dashboard"))
+        else:
+            flash("Invalid username or password", "error")
+            return redirect(url_for("login"))
 
     return render_template("login.html")
 
