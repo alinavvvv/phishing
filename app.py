@@ -95,14 +95,20 @@ def add_user():
 def send(user_id):
     user = User.query.get(user_id)
 
+    if not user:
+        flash("User not found", "error")
+        return redirect(url_for("users"))
+
     link = request.host_url + f"track?id={user.id}"
 
     try:
         send_phishing_email(user, link)
+        flash("Email sent!", "success")
         print("SEND BUTTON CLICKED")
 
     except Exception as e:
         print("SEND ERROR:", e)
+        flash("Email failed", "error")
 
     return redirect(url_for("users"))
 
@@ -111,15 +117,34 @@ def send(user_id):
 def track():
     user_id = request.args.get("id")
 
+    try:
+        user_id = int(user_id)
+    except:
+        return redirect(url_for("education"))
+
     user = User.query.get(user_id)
+
     if user:
         user.risk_score = (user.risk_score or 0) + 1
 
-    db.session.add(Click(user_id=user_id))
-    db.session.commit()
+        click = Click(
+            user_id=user.id,
+            ip=request.headers.get("X-Forwarded-For", request.remote_addr)
+        )
+
+        db.session.add(click)
+        db.session.commit()
 
     return redirect(url_for("education"))
 
+
+@app.route("/clicks")
+def clicks():
+    if not session.get("admin"):
+        return redirect(url_for("login"))
+
+    click_list = Click.query.order_by(Click.timestamp.desc()).all()
+    return render_template("clicks.html", clicks=click_list)
 
 # ---------------- EDUCATION PAGE ----------------
 @app.route("/education")
