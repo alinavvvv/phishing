@@ -1,16 +1,17 @@
 import os
 
 class Config:
-    SECRET_KEY = "your-secret-key"
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev")
 
-    SQLALCHEMY_DATABASE_URI = "sqlite:///db.sqlite3"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # 🔹 SendGrid / Mail settings
-    MAIL_SERVER = "smtp.sendgrid.net"
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
+    # DATABASE
+    uri = os.environ.get("DATABASE_URL")
 
-    MAIL_USERNAME = "apikey"
-    MAIL_PASSWORD = os.environ.get("SENDGRID_API_KEY")
+    if uri and uri.startswith("postgres://"):
+        uri = uri.replace("postgres://", "postgresql://", 1)
 
-    MAIL_DEFAULT_SENDER = "noreply.security.training@gmail.com"
+    SQLALCHEMY_DATABASE_URI = uri or "sqlite:///db.sqlite3"
+
+    # SendGrid API key
+    SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
