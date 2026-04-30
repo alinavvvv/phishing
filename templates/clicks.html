@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Click Logs</h2>
+
+<table style="margin-top:20px; width:100%; border-collapse:collapse;">
+    <tr style="background:#f3f4f6;">
+        <th>ID</th>
+        <th>User ID</th>
+        <th>Email</th>
+        <th>IP</th>
+        <th>Time</th>
+    </tr>
+
+    {% for c in clicks %}
+    <tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.user_id }}</td>
+        <td>{{ c.user.email if c.user else "Unknown" }}</td>
+        <td>{{ c.ip or "N/A" }}</td>
+        <td>
+            {{ c.timestamp.strftime('%Y-%m-%d %H:%M:%S') if c.timestamp else "" }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
