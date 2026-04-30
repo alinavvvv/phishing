@@ -3,6 +3,7 @@ from config import Config
 from models import db, User, Click
 from flask_mail import Mail
 from email_service import send_phishing_email
+from sqlalchemy import text
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -23,13 +24,11 @@ def login():
 
     return render_template("login.html")
 
-
 # ---------------- LOGOUT ----------------
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
-
 
 # ---------------- DASHBOARD ----------------
 @app.route("/dashboard")
@@ -46,7 +45,6 @@ def dashboard():
         clicks=clicks_count
     )
 
-
 # ---------------- USERS ----------------
 @app.route("/users")
 def users():
@@ -55,7 +53,6 @@ def users():
 
     users_list = User.query.all()
     return render_template("users.html", users=users_list)
-
 
 # ---------------- ADD USER ----------------
 @app.route("/add_user", methods=["GET", "POST"])
@@ -76,7 +73,7 @@ def add_user():
             return redirect(url_for("users"))
 
         try:
-            user = User(email=email, risk_score=0)  # ✅ добавих default
+            user = User(email=email, risk_score=0)
             db.session.add(user)
             db.session.commit()
             flash("User added successfully", "success")
@@ -88,7 +85,6 @@ def add_user():
         return redirect(url_for("users"))
 
     return render_template("add_user.html")
-
 
 # ---------------- SEND EMAIL ----------------
 @app.route("/send/<int:user_id>")
@@ -137,7 +133,7 @@ def track():
 
     return redirect(url_for("education"))
 
-
+# ---------------- CLICKS PAGE ----------------
 @app.route("/clicks")
 def clicks():
     if not session.get("admin"):
@@ -146,17 +142,32 @@ def clicks():
     click_list = Click.query.order_by(Click.timestamp.desc()).all()
     return render_template("clicks.html", clicks=click_list)
 
+# ---------------- FIX DATABASE ----------------
+@app.route("/fix-db")
+def fix_db():
+    try:
+        db.session.execute(text("ALTER TABLE click ADD COLUMN ip VARCHAR(100);"))
+    except Exception as e:
+        print("IP column:", e)
+
+    try:
+        db.session.execute(text("ALTER TABLE click ADD COLUMN timestamp TIMESTAMP;"))
+    except Exception as e:
+        print("Timestamp column:", e)
+
+    db.session.commit()
+    return "DB FIXED"
+
 # ---------------- EDUCATION PAGE ----------------
 @app.route("/education")
 def education():
     return render_template("education.html")
-
 
 # ---------------- HOME ----------------
 @app.route("/")
 def home():
     return redirect(url_for("login"))
 
-
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)
