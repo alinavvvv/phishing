@@ -17,10 +17,12 @@ app.config.from_object(Config)
 db.init_app(app)
 
 
+# ---------------- INIT DB ----------------
 with app.app_context():
     db.create_all()
 
 
+# ---------------- HELPERS ----------------
 def admin_required():
     return session.get("admin") is True
 
@@ -118,6 +120,7 @@ def dashboard():
         return redirect(url_for("login"))
 
     users = User.query.all()
+
     users_count = len(users)
     clicks_count = Click.query.count()
     emails_count = EmailEvent.query.count()
@@ -131,7 +134,7 @@ def dashboard():
     high_risk_users = len([u for u in users if (u.risk_score or 0) > 5])
 
     today = datetime.utcnow().date()
-    labels = []
+    chart_labels = []
     clicks_data = []
 
     all_clicks = Click.query.all()
@@ -143,7 +146,7 @@ def dashboard():
 
     for i in range(13, -1, -1):
         day = today - timedelta(days=i)
-        labels.append(day.strftime("%d.%m"))
+        chart_labels.append(day.strftime("%d.%m"))
         clicks_data.append(click_dates.get(day, 0))
 
     risk_labels = [u.email for u in users]
@@ -157,7 +160,7 @@ def dashboard():
         click_rate=click_rate,
         open_rate=open_rate,
         high_risk_users=high_risk_users,
-        chart_labels=labels,
+        chart_labels=chart_labels,
         clicks_data=clicks_data,
         risk_labels=risk_labels,
         risk_values=risk_values
@@ -191,7 +194,7 @@ def user_detail(user_id):
     open_rate = round((opened_count / sent_count) * 100, 1) if sent_count else 0
 
     today = datetime.utcnow().date()
-    labels = []
+    chart_labels = []
     click_data = []
 
     click_dates = Counter()
@@ -202,7 +205,7 @@ def user_detail(user_id):
 
     for i in range(13, -1, -1):
         day = today - timedelta(days=i)
-        labels.append(day.strftime("%d.%m"))
+        chart_labels.append(day.strftime("%d.%m"))
         click_data.append(click_dates.get(day, 0))
 
     return render_template(
@@ -214,7 +217,7 @@ def user_detail(user_id):
         completed_count=completed_count,
         click_rate=click_rate,
         open_rate=open_rate,
-        chart_labels=labels,
+        chart_labels=chart_labels,
         click_data=click_data
     )
 
@@ -267,7 +270,6 @@ def send(user_id):
         return redirect(url_for("users"))
 
     campaign = get_default_campaign()
-
     success = create_and_send_email(user, campaign)
 
     if success:
@@ -322,13 +324,14 @@ def send_campaign(campaign_id):
         return redirect(url_for("login"))
 
     campaign = Campaign.query.get_or_404(campaign_id)
-    users = User.query.all()
+    all_users = User.query.all()
 
     sent = 0
     failed = 0
 
-    for user in users:
+    for user in all_users:
         success = create_and_send_email(user, campaign)
+
         if success:
             sent += 1
         else:
@@ -428,11 +431,11 @@ def statistics():
     if not admin_required():
         return redirect(url_for("login"))
 
-    users = User.query.all()
+    all_users = User.query.all()
 
-    labels = [u.email for u in users]
-    risk_scores = [u.risk_score or 0 for u in users]
-    click_rates = [u.click_rate() for u in users]
+    labels = [u.email for u in all_users]
+    risk_scores = [u.risk_score or 0 for u in all_users]
+    click_rates = [u.click_rate() for u in all_users]
 
     return render_template(
         "statistics.html",
@@ -443,30 +446,46 @@ def statistics():
 
 
 # ---------------- FIX DATABASE ----------------
+# Временно е без admin проверка, защото dashboard може да се чупи преди migration.
+# След като го отвориш веднъж успешно, може да го изтриеш или да върнеш admin проверка.
 @app.route("/fix-db")
 def fix_db():
-    if not admin_required():
-        return redirect(url_for("login"))
-
-    with app.app_context():
+    try:
         db.create_all()
 
-    commands = [
-        "ALTER TABLE click ADD COLUMN ip VARCHAR(100);",
-        "ALTER TABLE click ADD COLUMN timestamp TIMESTAMP;",
-        "ALTER TABLE click ADD COLUMN email_event_id INTEGER;",
-        "ALTER TABLE click ADD COLUMN user_agent VARCHAR(300);"
-    ]
+        migrations = [
+            'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS risk_score INTEGER DEFAULT 0;',
 
-    for command in commands:
-        try:
-            db.session.execute(text(command))
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            print("MIGRATION:", e)
+            'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS ip VARCHAR(100);',
+            'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS timestamp TIMESTAMP;',
+            'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS email_event_id INTEGER;',
+            'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS user_agent VARCHAR(300);',
 
-    return "Базата е обновена успешно."
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50) DEFAULT \'created\';',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS opened BOOLEAN DEFAULT FALSE;',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS opened_at TIMESTAMP;',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS open_count INTEGER DEFAULT 0;',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS clicked BOOLEAN DEFAULT FALSE;',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMP;',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS click_count INTEGER DEFAULT 0;',
+
+            'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE;',
+            'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;'
+        ]
+
+        for command in migrations:
+            try:
+                db.session.execute(text(command))
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print("MIGRATION:", e)
+
+        return "Базата е обновена успешно."
+
+    except Exception as e:
+        db.session.rollback()
+        return f"Грешка при обновяване на базата: {str(e)}"
 
 
 # ---------------- RUN ----------------
