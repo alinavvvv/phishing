@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<h2>👤 Профил на потребител</h2>
+
+<div class="card shadow p-4">
+    <h4>{{ user.email }}</h4>
+
+    <div class="row mt-3">
+        <div class="col-md-3">
+            <div class="card p-3 bg-primary text-white">
+                <h6>Изпратени имейли</h6>
+                <h2>{{ sent_count }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3 bg-success text-white">
+                <h6>Отворени имейли</h6>
+                <h2>{{ opened_count }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3 bg-danger text-white">
+                <h6>Кликове</h6>
+                <h2>{{ clicked_count }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3 bg-warning text-dark">
+                <h6>Рисков резултат</h6>
+                <h2>{{ user.risk_score or 0 }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <p>Open rate: <b>{{ open_rate }}%</b></p>
+        <p>Click rate: <b>{{ click_rate }}%</b></p>
+        <p>Завършени обучения: <b>{{ completed_count }}</b></p>
+    </div>
+</div>
+
+<div class="card shadow p-3 mt-4">
+    <h5>Кликове за последните 14 дни</h5>
+    <canvas id="userClicksChart"></canvas>
+</div>
+
+<script>
+const labels = {{ chart_labels|tojson }};
+const clickData = {{ click_data|tojson }};
+
+new Chart(document.getElementById('userClicksChart'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Кликове',
+            data: clickData
+        }]
+    }
+});
+</script>
+
+{% endblock %}
