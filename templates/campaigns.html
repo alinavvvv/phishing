@@ -4,7 +4,13 @@
 
 <h2>🎯 Кампании</h2>
 
-<a class="btn btn-success mb-3" href="{{ url_for('create_campaign') }}">+ Създай кампания</a>
+<p class="text-muted">
+    Тук се управляват обучителните кампании за изпращане на имейли към потребителите.
+</p>
+
+<a class="btn btn-success mb-3" href="{{ url_for('create_campaign') }}">
+    + Създай кампания
+</a>
 
 <table class="table table-bordered table-striped bg-white">
     <tr>
@@ -18,9 +24,27 @@
     {% for c in campaigns %}
     <tr>
         <td>{{ c.id }}</td>
+
         <td>{{ c.name }}</td>
-        <td>{{ c.frequency }}</td>
-        <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else "" }}</td>
+
+        <td>
+            {% if c.frequency == "manual" %}
+                Ръчно изпращане
+            {% elif c.frequency == "daily" %}
+                Всеки ден
+            {% elif c.frequency == "three_per_week" %}
+                Три пъти седмично
+            {% elif c.frequency == "weekly" %}
+                Веднъж седмично
+            {% else %}
+                {{ c.frequency }}
+            {% endif %}
+        </td>
+
+        <td>
+            {{ c.created_at.strftime('%Y-%m-%d %H:%M') if c.created_at else "Няма данни" }}
+        </td>
+
         <td>
             <a class="btn btn-primary btn-sm" href="{{ url_for('send_campaign', campaign_id=c.id) }}">
                 Изпрати към всички
@@ -29,5 +53,11 @@
     </tr>
     {% endfor %}
 </table>
+
+{% if campaigns|length == 0 %}
+    <div class="alert alert-info">
+        Все още няма създадени кампании.
+    </div>
+{% endif %}
 
 {% endblock %}
