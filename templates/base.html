@@ -1,24 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="bg">
 <head>
-    <title>SOC System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>SOC Обучителна система</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
-<body class="bg-light">
+<body style="background:#f3f4f6;">
 
-<nav class="navbar navbar-dark bg-dark px-3">
-    <a class="navbar-brand" href="/dashboard">SOC System</a>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+    <a class="navbar-brand" href="{{ url_for('dashboard') }}">🛡 SOC обучение</a>
 
-    <div>
-        <a class="btn btn-sm btn-outline-light" href="/users">Users</a>
-        <a class="btn btn-sm btn-outline-light" href="/add_user">Add User</a>
-        <a class="btn btn-sm btn-danger" href="/login">Logout</a>
+    <div class="ms-auto d-flex gap-2">
+        <a class="btn btn-outline-light btn-sm" href="{{ url_for('dashboard') }}">Табло</a>
+        <a class="btn btn-outline-light btn-sm" href="{{ url_for('users') }}">Потребители</a>
+        <a class="btn btn-outline-light btn-sm" href="{{ url_for('campaigns') }}">Кампании</a>
+        <a class="btn btn-outline-light btn-sm" href="{{ url_for('clicks') }}">Кликове</a>
+        <a class="btn btn-outline-light btn-sm" href="{{ url_for('statistics') }}">Статистика</a>
+        <a class="btn btn-danger btn-sm" href="{{ url_for('logout') }}">Изход</a>
     </div>
 </nav>
 
 <div class="container mt-4">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert
+                    {% if category == 'success' %}alert-success
+                    {% elif category == 'error' %}alert-danger
+                    {% elif category == 'warning' %}alert-warning
+                    {% else %}alert-info
+                    {% endif %}
+                ">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     {% block content %}{% endblock %}
+
 </div>
 
 </body>
