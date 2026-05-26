@@ -1,11 +1,10 @@
 import os
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev")
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # DATABASE
     uri = os.environ.get("DATABASE_URL")
 
     if uri and uri.startswith("postgres://"):
@@ -13,5 +12,8 @@ class Config:
 
     SQLALCHEMY_DATABASE_URI = uri or "sqlite:///db.sqlite3"
 
-    # SendGrid API key
     SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+    SENDGRID_FROM_EMAIL = os.environ.get(
+        "SENDGRID_FROM_EMAIL",
+        "noreply.security.training@gmail.com"
+    )
