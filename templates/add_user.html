@@ -1,19 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h2>Add User</h2>
 
-    <form method="POST" class="card">
-        <input type="email" name="email" placeholder="Enter email" required>
-        <button type="submit">Add User</button>
+<div class="card shadow p-4" style="max-width:500px;">
+    <h2>➕ Добавяне на потребител</h2>
+    <p class="text-muted">Въведете имейл адрес на потребителя, който ще участва в обучението.</p>
+
+    <form method="post">
+        <label class="form-label">Имейл адрес</label>
+        <input name="email" type="email" class="form-control" placeholder="example@email.com" required>
+
+        <button class="btn btn-success mt-3">Добави потребител</button>
     </form>
 </div>
 
-<style>
-.container { max-width: 500px; margin: auto; padding: 40px; font-family: Arial; }
-.card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-input { width: 100%; padding: 12px; margin-bottom: 10px; }
-button { background: #2563eb; color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; }
-</style>
 {% endblock %}
