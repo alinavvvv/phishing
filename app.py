@@ -17,9 +17,48 @@ app.config.from_object(Config)
 db.init_app(app)
 
 
-# ---------------- INIT DB ----------------
+# ---------------- INIT DB + AUTO MIGRATION ----------------
 with app.app_context():
     db.create_all()
+
+    migrations = [
+        'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS risk_score INTEGER DEFAULT 0;',
+
+        'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS ip VARCHAR(100);',
+        'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS timestamp TIMESTAMP;',
+        'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS email_event_id INTEGER;',
+        'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS user_agent VARCHAR(300);',
+
+        'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS name VARCHAR(150);',
+        'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS template_name VARCHAR(120) DEFAULT \'security_alert.html\';',
+        'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT \'manual\';',
+        'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;',
+
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS user_id INTEGER;',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS campaign_id INTEGER;',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS token VARCHAR(120);',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP;',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50) DEFAULT \'created\';',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS opened BOOLEAN DEFAULT FALSE;',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS opened_at TIMESTAMP;',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS open_count INTEGER DEFAULT 0;',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS clicked BOOLEAN DEFAULT FALSE;',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMP;',
+        'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS click_count INTEGER DEFAULT 0;',
+
+        'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS user_id INTEGER;',
+        'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS email_event_id INTEGER;',
+        'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE;',
+        'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;'
+    ]
+
+    for command in migrations:
+        try:
+            db.session.execute(text(command))
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print("MIGRATION ERROR:", e)
 
 
 # ---------------- HELPERS ----------------
@@ -58,7 +97,8 @@ def create_and_send_email(user, campaign):
         user_id=user.id,
         campaign_id=campaign.id,
         token=token,
-        delivery_status="created"
+        delivery_status="created",
+        sent_at=datetime.utcnow()
     )
 
     db.session.add(event)
@@ -119,9 +159,9 @@ def dashboard():
     if not admin_required():
         return redirect(url_for("login"))
 
-    users = User.query.all()
+    all_users = User.query.all()
 
-    users_count = len(users)
+    users_count = len(all_users)
     clicks_count = Click.query.count()
     emails_count = EmailEvent.query.count()
 
@@ -131,7 +171,7 @@ def dashboard():
     click_rate = round((clicked_events / emails_count) * 100, 1) if emails_count else 0
     open_rate = round((opened_events / emails_count) * 100, 1) if emails_count else 0
 
-    high_risk_users = len([u for u in users if (u.risk_score or 0) > 5])
+    high_risk_users = len([u for u in all_users if (u.risk_score or 0) > 5])
 
     today = datetime.utcnow().date()
     chart_labels = []
@@ -149,8 +189,8 @@ def dashboard():
         chart_labels.append(day.strftime("%d.%m"))
         clicks_data.append(click_dates.get(day, 0))
 
-    risk_labels = [u.email for u in users]
-    risk_values = [u.risk_score or 0 for u in users]
+    risk_labels = [u.email for u in all_users]
+    risk_values = [u.risk_score or 0 for u in all_users]
 
     return render_template(
         "dashboard.html",
@@ -306,7 +346,8 @@ def create_campaign():
         campaign = Campaign(
             name=name,
             template_name="security_alert.html",
-            frequency=frequency or "manual"
+            frequency=frequency or "manual",
+            created_at=datetime.utcnow()
         )
 
         db.session.add(campaign)
@@ -359,7 +400,8 @@ def training_page(token):
         user_id=event.user_id,
         email_event_id=event.id,
         ip=get_client_ip(),
-        user_agent=request.headers.get("User-Agent")
+        user_agent=request.headers.get("User-Agent"),
+        timestamp=datetime.utcnow()
     )
 
     db.session.add(click)
@@ -446,8 +488,6 @@ def statistics():
 
 
 # ---------------- FIX DATABASE ----------------
-# Временно е без admin проверка, защото dashboard може да се чупи преди migration.
-# След като го отвориш веднъж успешно, може да го изтриеш или да върнеш admin проверка.
 @app.route("/fix-db")
 def fix_db():
     try:
@@ -461,6 +501,15 @@ def fix_db():
             'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS email_event_id INTEGER;',
             'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS user_agent VARCHAR(300);',
 
+            'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS name VARCHAR(150);',
+            'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS template_name VARCHAR(120) DEFAULT \'security_alert.html\';',
+            'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT \'manual\';',
+            'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;',
+
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS user_id INTEGER;',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS campaign_id INTEGER;',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS token VARCHAR(120);',
+            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP;',
             'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50) DEFAULT \'created\';',
             'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS opened BOOLEAN DEFAULT FALSE;',
             'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS opened_at TIMESTAMP;',
@@ -469,6 +518,8 @@ def fix_db():
             'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMP;',
             'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS click_count INTEGER DEFAULT 0;',
 
+            'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS user_id INTEGER;',
+            'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS email_event_id INTEGER;',
             'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE;',
             'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;'
         ]
@@ -479,7 +530,7 @@ def fix_db():
                 db.session.commit()
             except Exception as e:
                 db.session.rollback()
-                print("MIGRATION:", e)
+                print("MIGRATION ERROR:", e)
 
         return "Базата е обновена успешно."
 
