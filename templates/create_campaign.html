@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card shadow p-4" style="max-width:600px;">
+    <h2>🎯 Създаване на кампания</h2>
+    <p class="text-muted">Кампанията определя вида и честотата на обучителните имейли.</p>
+
+    <form method="post">
+        <label class="form-label">Име на кампания</label>
+        <input name="name" class="form-control" placeholder="Например: Обучение срещу фишинг" required>
+
+        <label class="form-label mt-3">Честота</label>
+        <select name="frequency" class="form-control">
+            <option value="manual">Ръчно изпращане</option>
+            <option value="daily">Всеки ден</option>
+            <option value="three_per_week">Три пъти седмично</option>
+            <option value="weekly">Веднъж седмично</option>
+        </select>
+
+        <button class="btn btn-success mt-3">Създай кампания</button>
+    </form>
+</div>
+
+{% endblock %}
