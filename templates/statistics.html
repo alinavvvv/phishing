@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<h2>📈 Статистика и анализ</h2>
+<p class="text-muted">Графики за поведението и напредъка на потребителите.</p>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow p-3">
+            <h5>Рисков резултат по потребители</h5>
+            <canvas id="riskChart"></canvas>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow p-3">
+            <h5>Процент на кликване по потребители</h5>
+            <canvas id="clickRateChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+const labels = {{ labels|tojson }};
+const riskScores = {{ risk_scores|tojson }};
+const clickRates = {{ click_rates|tojson }};
+
+new Chart(document.getElementById('riskChart'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Рисков резултат',
+            data: riskScores
+        }]
+    }
+});
+
+new Chart(document.getElementById('clickRateChart'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Click rate %',
+            data: clickRates
+        }]
+    }
+});
+</script>
+
+{% endblock %}
