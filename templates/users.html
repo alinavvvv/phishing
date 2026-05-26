@@ -2,16 +2,17 @@
 
 {% block content %}
 
-<h2>Users</h2>
+<h2>👥 Потребители</h2>
 
-<a href="{{ url_for('add_user') }}">+ Add User</a>
+<a class="btn btn-success mt-2 mb-3" href="{{ url_for('add_user') }}">+ Добави потребител</a>
 
-<table style="margin-top:20px; width:100%; border-collapse:collapse;">
+<table class="table table-bordered table-striped bg-white">
     <tr>
         <th>ID</th>
-        <th>Email</th>
-        <th>Risk Score</th>
-        <th>Actions</th>
+        <th>Имейл</th>
+        <th>Рисков резултат</th>
+        <th>Статус</th>
+        <th>Действия</th>
     </tr>
 
     {% for u in users %}
@@ -19,8 +20,20 @@
         <td>{{ u.id }}</td>
         <td>{{ u.email }}</td>
         <td>{{ u.risk_score or 0 }}</td>
+
         <td>
-            <a href="{{ url_for('send', user_id=u.id) }}">Send</a>
+            {% if (u.risk_score or 0) > 5 %}
+                🔴 Висок риск
+            {% elif (u.risk_score or 0) > 2 %}
+                🟠 Среден риск
+            {% else %}
+                🟢 Нисък риск
+            {% endif %}
+        </td>
+
+        <td>
+            <a class="btn btn-info btn-sm" href="{{ url_for('user_detail', user_id=u.id) }}">Детайли</a>
+            <a class="btn btn-primary btn-sm" href="{{ url_for('send', user_id=u.id) }}">Изпрати имейл</a>
         </td>
     </tr>
     {% endfor %}
