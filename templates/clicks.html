@@ -2,51 +2,34 @@
 
 {% block content %}
 
-<h2>Click Logs</h2>
+<h2>🧾 Регистър на кликове</h2>
+<p class="text-muted">Тук се вижда кой потребител е отворил обучителния линк, кога и от какъв IP адрес.</p>
 
-<table style="margin-top:20px; width:100%; border-collapse:collapse;">
-    <tr style="background:#f3f4f6;">
+<table class="table table-bordered table-striped bg-white">
+    <tr>
         <th>ID</th>
-        <th>User ID</th>
-        <th>Email</th>
-        <th>IP</th>
-        <th>Time</th>
-        <th>Risk Score</th>
-        <th>Status</th>
+        <th>Имейл</th>
+        <th>IP адрес</th>
+        <th>Дата и час</th>
+        <th>Рисков резултат</th>
+        <th>Статус</th>
     </tr>
 
     {% for c in clicks %}
     <tr>
         <td>{{ c.id }}</td>
-        <td>{{ c.user_id }}</td>
+        <td>{{ c.user.email if c.user else "Неизвестен" }}</td>
+        <td>{{ c.ip or "Няма данни" }}</td>
+        <td>{{ c.timestamp.strftime('%Y-%m-%d %H:%M:%S') if c.timestamp else "" }}</td>
+        <td>{{ c.user.risk_score if c.user else 0 }}</td>
 
         <td>
-            {{ c.user.email if c.user else "Unknown" }}
-        </td>
-
-        <td>{{ c.ip or "N/A" }}</td>
-
-        <td>
-            {{ c.timestamp.strftime('%Y-%m-%d %H:%M:%S') if c.timestamp else "" }}
-        </td>
-
-        <!-- 🔥 Risk Score -->
-        <td style="font-weight:bold; color:
-            {% if c.user and c.user.risk_score > 2 %}
-                red
+            {% if c.user and c.user.risk_score > 5 %}
+                🔴 Висок риск
+            {% elif c.user and c.user.risk_score > 2 %}
+                🟠 Среден риск
             {% else %}
-                green
-            {% endif %}
-        ">
-            {{ c.user.risk_score if c.user else 0 }}
-        </td>
-
-        <!-- 🔥 Status -->
-        <td>
-            {% if c.user and c.user.risk_score > 2 %}
-                ⚠️ High Risk
-            {% else %}
-                ✅ Safe
+                🟢 Нисък риск
             {% endif %}
         </td>
     </tr>
