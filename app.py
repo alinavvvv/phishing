@@ -602,9 +602,9 @@ def statistics():
         "statistics.html",
         labels=labels,
         risk_scores=risk_scores,
-        click_rates=click_rates
+        click_rates=click_rates,
+        all_users=all_users  
     )
-
 
 # ---------------- FIX DATABASE ----------------
 @app.route("/fix-db")
