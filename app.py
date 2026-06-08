@@ -267,45 +267,49 @@ def user_detail(user_id):
 def add_user():
     if not admin_required():
         return redirect(url_for("login"))
-
+        
     if request.method == "POST":
+        # Взимане на данните от формата (с поправена индентация)
         first_name = request.form.get("first_name")
-last_name = request.form.get("last_name")
-
-email = request.form.get("email")
-
-company = request.form.get("company")
-position = request.form.get("position")
-
-age = request.form.get("age")
-gender = request.form.get("gender")
-
+        last_name = request.form.get("last_name")
+        email = request.form.get("email")
+        company = request.form.get("company")
+        position = request.form.get("position")
+        age = request.form.get("age")
+        gender = request.form.get("gender")
+        
         if not email:
             flash("Имейлът е задължителен.", "error")
             return redirect(url_for("add_user"))
-
+            
         existing = User.query.filter_by(email=email).first()
-
         if existing:
             flash("Този потребител вече съществува.", "warning")
             return redirect(url_for("users"))
-
+            
         try:
-            user = User(email=email, risk_score=0)
+            # Създаване на потребителя с всички подадени полета
+            user = User(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                company=company,
+                position=position,
+                age=int(age) if age else None,
+                gender=gender,
+                risk_score=0
+            )
             db.session.add(user)
             db.session.commit()
             flash("Потребителят е добавен успешно.", "success")
-
         except Exception as e:
             db.session.rollback()
             print("DB ERROR:", e)
             flash("Грешка при запис в базата данни.", "error")
-
+            
         return redirect(url_for("users"))
-
+        
     return render_template("add_user.html")
-
-
 # ---------------- SEND EMAIL TO ONE USER ----------------
 @app.route("/send/<int:user_id>")
 def send(user_id):
