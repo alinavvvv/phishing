@@ -7,36 +7,51 @@
 <a class="btn btn-success mt-2 mb-3" href="{{ url_for('add_user') }}">+ Добави потребител</a>
 
 <table class="table table-bordered table-striped bg-white">
-    <tr>
-        <th>ID</th>
-        <th>Имейл</th>
-        <th>Рисков резултат</th>
-        <th>Статус</th>
-        <th>Действия</th>
-    </tr>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Име</th>
+            <th>Фамилия</th>
+            <th>Компания</th>
+            <th>Длъжност</th>
+            <th>Възраст</th>
+            <th>Пол</th>
+            <th>Имейл</th>
+            <th>Риск</th>
+            <th>Статус</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.first_name if user.first_name else '' }}</td>
+            <td>{{ user.last_name if user.last_name else '' }}</td>
+            <td>{{ user.company if user.company else '' }}</td>
+            <td>{{ user.position if user.position else '' }}</td>
+            <td>{{ user.age if user.age else '' }}</td>
+            <td>{{ user.gender if user.gender else '' }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.risk_score or 0 }}</td>
 
-    {% for u in users %}
-    <tr>
-        <td>{{ u.id }}</td>
-        <td>{{ u.email }}</td>
-        <td>{{ u.risk_score or 0 }}</td>
+            <td>
+                {% if (user.risk_score or 0) > 5 %}
+                    🔴 Висок риск
+                {% elif (user.risk_score or 0) > 2 %}
+                    🟠 Среден риск
+                {% else %}
+                    🟢 Нисък риск
+                {% endif %}
+            </td>
 
-        <td>
-            {% if (u.risk_score or 0) > 5 %}
-                🔴 Висок риск
-            {% elif (u.risk_score or 0) > 2 %}
-                🟠 Среден риск
-            {% else %}
-                🟢 Нисък риск
-            {% endif %}
-        </td>
-
-        <td>
-            <a class="btn btn-info btn-sm" href="{{ url_for('user_detail', user_id=u.id) }}">Детайли</a>
-            <a class="btn btn-primary btn-sm" href="{{ url_for('send', user_id=u.id) }}">Изпрати имейл</a>
-        </td>
-    </tr>
-    {% endfor %}
+            <td>
+                <a class="btn btn-info btn-sm" href="{{ url_for('user_detail', user_id=user.id) }}">Детайли</a>
+                <a class="btn btn-primary btn-sm" href="{{ url_for('send', user_id=user.id) }}">Изпрати имейл</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
 {% endblock %}
