@@ -1,57 +1,60 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="container mt-4">
+    <h2>👥 Потребители</h2>
+    
+    <a href="{{ url_for('add_user') }}" class="btn btn-success mb-3">+ Добави потребител</a>
 
-<h2>👥 Потребители</h2>
-
-<a class="btn btn-success mt-2 mb-3" href="{{ url_for('add_user') }}">+ Добави потребител</a>
-
-<table class="table table-bordered table-striped bg-white">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Име</th>
-            <th>Фамилия</th>
-            <th>Компания</th>
-            <th>Длъжност</th>
-            <th>Възраст</th>
-            <th>Пол</th>
-            <th>Имейл</th>
-            <th>Риск</th>
-            <th>Статус</th>
-            <th>Действия</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in users %}
-        <tr>
-            <td>{{ user.id }}</td>
-            <td>{{ user.first_name if user.first_name else '' }}</td>
-            <td>{{ user.last_name if user.last_name else '' }}</td>
-            <td>{{ user.company if user.company else '' }}</td>
-            <td>{{ user.position if user.position else '' }}</td>
-            <td>{{ user.age if user.age else '' }}</td>
-            <td>{{ user.gender if user.gender else '' }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.risk_score or 0 }}</td>
-
-            <td>
-                {% if (user.risk_score or 0) > 5 %}
-                    🔴 Висок риск
-                {% elif (user.risk_score or 0) > 2 %}
-                    🟠 Среден риск
-                {% else %}
-                    🟢 Нисък риск
-                {% endif %}
-            </td>
-
-            <td>
-                <a class="btn btn-info btn-sm" href="{{ url_for('user_detail', user_id=user.id) }}">Детайли</a>
-                <a class="btn btn-primary btn-sm" href="{{ url_for('send', user_id=user.id) }}">Изпрати имейл</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
+    <table class="table table-bordered table-striped bg-white align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>№</th> <th>Име</th>
+                <th>Фамилия</th>
+                <th>Компания</th>
+                <th>Длъжност</th>
+                <th>Възраст</th>
+                <th>Пол</th>
+                <th>Имейл</th>
+                <th>Риск</th>
+                <th>Статус</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ loop.index }}</td> <td>{{ u.first_name or '' }}</td>
+                <td>{{ u.last_name or '' }}</td>
+                <td>{{ u.company or '' }}</td>
+                <td>{{ u.position or '' }}</td>
+                <td>{{ u.age or '' }}</td>
+                <td>
+                    {% if u.gender == 'male' %}Мъж
+                    {% elif u.gender == 'female' %}Жена
+                    {% else %}{{ u.gender or '' }}{% endif %}
+                </td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.risk_score or 0 }}</td>
+                <td>
+                    {% if (u.risk_score or 0) > 5 %}
+                        🔴 Висок риск
+                    {% elif (u.risk_score or 0) > 2 %}
+                        🟠 Среден риск
+                    {% else %}
+                        🟢 Нисък риск
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('user_detail', user_id=u.id) }}" class="btn btn-info text-white">Детайли</a>
+                        <a href="{{ url_for('edit_user', user_id=u.id) }}" class="btn btn-warning text-dark">Редактирай</a>
+                        <a href="{{ url_for('send', user_id=u.id) }}" class="btn btn-primary">Изпрати имейл</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
