@@ -10,9 +10,9 @@ def send_training_email(user, link, campaign=None, open_pixel_url=None, template
     if "email_scam_1" in template_name:
         subject_text = "⚠️ КРИТИЧНО: Засечен неоторизиран опит за достъп"
     elif "email_scam_2" in template_name:
-        subject_text = "🌳 HR: Заявка за допълнителни социални придобивки и ваучери"
+        subject_text = "⚙️ Спешно известие: Пощенската Ви кутия е запълнена на 98%"
     elif "email_scam_3" in template_name:
-        subject_text = "subject = "Потвърдете получаването на Вашите ваучери""
+        subject_text = "subject = "🌳 HR: Потвърдете получаването на Вашите ваучери""
     else:
         subject_text = "Обучение по киберсигурност"
 
