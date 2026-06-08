@@ -1,39 +1,49 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="container mt-4" style="max-width: 1000px;">
+    <div class="text-center mb-4">
+        <h2>🖱️ Регистър на кликванията</h2>
+        <p class="text-muted">История на засечените потребителски активности по фишинг кампаниите</p>
+    </div>
 
-<h2>🧾 Регистър на кликове</h2>
-<p class="text-muted">Тук се вижда кой потребител е отворил обучителния линк, кога и от какъв IP адрес.</p>
-
-<table class="table table-bordered table-striped bg-white">
-    <tr>
-        <th>№</th>
-        <th>Имейл</th>
-        <th>IP адрес</th>
-        <th>Дата и час</th>
-        <th>Рисков резултат</th>
-        <th>Статус</th>
-    </tr>
-
-    {% for c in clicks %}
-    <tr>
-        <td>{{ c.id }}</td>
-        <td>{{ c.user.email if c.user else "Неизвестен" }}</td>
-        <td>{{ c.ip or "Няма данни" }}</td>
-        <td>{{ c.timestamp.strftime('%Y-%m-%d %H:%M:%S') if c.timestamp else "" }}</td>
-        <td>{{ c.user.risk_score if c.user else 0 }}</td>
-
-        <td>
-            {% if c.user and c.user.risk_score > 5 %}
-                🔴 Висок риск
-            {% elif c.user and c.user.risk_score > 2 %}
-                🟠 Среден риск
-            {% else %}
-                🟢 Нисък риск
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-
+    <div class="card shadow-sm bg-white p-3">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center mb-0" style="table-layout: fixed; width: 100%;">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 8%;">№</th>
+                        <th style="width: 27%;">Потребител (Имейл)</th>
+                        <th style="width: 25%;">Дата и час</th>
+                        <th style="width: 40%;">Устройство / Браузър</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clicks %}
+                    <tr>
+                        <td class="fw-bold text-muted">{{ loop.index }}</td>
+                        <td class="text-start text-truncate" title="{{ c.user.email if c.user else 'Изтрит потребител' }}">
+                            {{ c.user.email if c.user else 'Изтрит потребител' }}
+                        </td>
+                        <td>
+                            {% if c.timestamp %}
+                                {{ c.timestamp.strftime('%d.%m.%Y %H:%M:%S') }}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td>
+                        <td class="text-start text-muted text-truncate" style="font-size: 0.9rem;" title="{{ c.user_agent or 'Неизвестен' }}">
+                            {{ c.user_agent or 'Неизвестен' }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-muted p-4">Все още няма регистрирани кликвания.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}
