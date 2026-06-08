@@ -2,6 +2,7 @@ import os
 import uuid
 from datetime import datetime, timedelta
 from collections import Counter
+import random 
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
 from sqlalchemy import text
@@ -90,6 +91,7 @@ def get_default_campaign():
     return campaign
 
 
+
 def create_and_send_email(user, campaign):
     token = uuid.uuid4().hex
 
@@ -107,18 +109,29 @@ def create_and_send_email(user, campaign):
     training_link = url_for("training_page", token=token, _external=True)
     open_pixel_url = url_for("open_pixel", token=token, _external=True)
 
+    # 1. Трите шаблона от папка templates/emails/
+    templates_list = [
+        "emails/email_scam_1.html", 
+        "emails/email_scam_2.html", 
+        "emails/email_scam_3.html"
+    ]
+    
+    # 2. Избираме един на случаен принцип
+    chosen_template = random.choice(templates_list)
+
+    # 3. Подаваме избрания шаблон (chosen_template) към функцията за изпращане
     success = send_training_email(
         user=user,
         link=training_link,
         campaign=campaign,
-        open_pixel_url=open_pixel_url
+        open_pixel_url=open_pixel_url,
+        template_name=chosen_template  # Добавяме този нов параметър!
     )
 
     event.delivery_status = "sent" if success else "failed"
     db.session.commit()
 
     return success
-
 
 # ---------------- HOME ----------------
 @app.route("/")
