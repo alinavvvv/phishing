@@ -2,16 +2,88 @@
 
 {% block content %}
 
-<div class="card shadow p-4" style="max-width:500px;">
-    <h2>➕ Добавяне на потребител</h2>
-    <p class="text-muted">Въведете имейл адрес на потребителя, който ще участва в обучението.</p>
+<h2>Добавяне на потребител</h2>
 
-    <form method="post">
-        <label class="form-label">Имейл адрес</label>
-        <input name="email" type="email" class="form-control" placeholder="example@email.com" required>
+<form method="POST" class="card p-4 mt-3">
 
-        <button class="btn btn-success mt-3">Добави потребител</button>
-    </form>
-</div>
+    <div class="row">
+
+        <div class="col-md-6 mb-3">
+            <label>Име</label>
+            <input type="text"
+                   name="first_name"
+                   class="form-control"
+                   required>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label>Фамилия</label>
+            <input type="text"
+                   name="last_name"
+                   class="form-control"
+                   required>
+        </div>
+
+    </div>
+
+    <div class="mb-3">
+        <label>Имейл</label>
+        <input type="email"
+               name="email"
+               class="form-control"
+               required>
+    </div>
+
+    <div class="mb-3">
+        <label>Компания</label>
+        <input type="text"
+               name="company"
+               class="form-control">
+    </div>
+
+    <div class="mb-3">
+        <label>Длъжност</label>
+        <input type="text"
+               name="position"
+               class="form-control">
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-6 mb-3">
+            <label>Възраст</label>
+            <input type="number"
+                   name="age"
+                   class="form-control"
+                   min="18"
+                   max="100">
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label>Пол</label>
+
+            <select name="gender" class="form-control">
+
+                <option value="">Изберете</option>
+
+                <option value="Мъж">
+                    Мъж
+                </option>
+
+                <option value="Жена">
+                    Жена
+                </option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+    <button class="btn btn-success">
+        Добави потребител
+    </button>
+
+</form>
 
 {% endblock %}
