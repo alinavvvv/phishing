@@ -3,10 +3,22 @@ from flask import render_template
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
+# Добавяме template_name като аргумент (ако не е подаден, ще ползва стария по подразбиране)
+def send_training_email(user, link, campaign=None, open_pixel_url=None, template_name="emails/security_alert.html"):
+    
+    # Автоматично избираме подходящо заглавие (Subject) според избрания шаблон
+    if "email_scam_1" in template_name:
+        subject_text = "⚠️ КРИТИЧНО: Засечен неоторизиран опит за достъп"
+    elif "email_scam_2" in template_name:
+        subject_text = "🌳 HR: Заявка за допълнителни социални придобивки и ваучери"
+    elif "email_scam_3" in template_name:
+        subject_text = "⚙️ Спешно известие: Пощенската Ви кутия е запълнена на 98%"
+    else:
+        subject_text = "Обучение по киберсигурност"
 
-def send_training_email(user, link, campaign=None, open_pixel_url=None):
+    # Заменяме статичния път с променливата template_name
     html_content = render_template(
-        "emails/security_alert.html",
+        template_name,
         user=user,
         link=link,
         campaign=campaign,
@@ -19,7 +31,7 @@ def send_training_email(user, link, campaign=None, open_pixel_url=None):
             "noreply.security.education@gmail.com"
         ),
         to_emails=user.email,
-        subject="Обучение по киберсигурност",
+        subject=subject_text,  # Вече заглавието съответства на текста вътре!
         html_content=html_content
     )
 
@@ -41,6 +53,6 @@ def send_training_email(user, link, campaign=None, open_pixel_url=None):
         return False
 
 
-# Compatibility alias, ако някъде в app.py още се използва старото име
-def send_phishing_email(user, link, campaign=None, open_pixel_url=None):
-    return send_training_email(user, link, campaign, open_pixel_url)
+# Обновяваме и съвместимия alias, за да не даде грешка, ако се извика другаде
+def send_phishing_email(user, link, campaign=None, open_pixel_url=None, template_name="emails/security_alert.html"):
+    return send_training_email(user, link, campaign, open_pixel_url, template_name)
