@@ -173,22 +173,59 @@ def dashboard():
 
     high_risk_users = len([u for u in all_users if (u.risk_score or 0) > 5])
 
+    # 1. Графика по седмици / дни (Последните 14 дни)
     today = datetime.utcnow().date()
     chart_labels = []
     clicks_data = []
-
     all_clicks = Click.query.all()
     click_dates = Counter()
-
     for c in all_clicks:
         if c.timestamp:
             click_dates[c.timestamp.date()] += 1
-
     for i in range(13, -1, -1):
         day = today - timedelta(days=i)
         chart_labels.append(day.strftime("%d.%m"))
         clicks_data.append(click_dates.get(day, 0))
 
+    # 2. Графика: Сравнение по Компании (Кликвания по компании)
+    company_counter = Counter()
+    for c in all_clicks:
+        if c.user and c.user.company:
+            company_counter[c.user.company] += 1
+    company_labels = list(company_counter.keys())
+    company_values = list(company_counter.values())
+
+    # 3. Графика: Сравнение по Длъжности (Кликвания по длъжности)
+    position_counter = Counter()
+    for c in all_clicks:
+        if c.user and c.user.position:
+            position_counter[c.user.position] += 1
+    position_labels = list(position_counter.keys())
+    position_values = list(position_counter.values())
+
+    # 4. Графика: Сравнение Мъже / Жени (Пол на подлъгалите се)
+    gender_counter = Counter()
+    for c in all_clicks:
+        if c.user and c.user.gender:
+            gender_name = "Мъже" if c.user.gender == "male" else "Жени" if c.user.gender == "female" else c.user.gender
+            gender_counter[gender_name] += 1
+    gender_labels = list(gender_counter.keys())
+    gender_values = list(gender_counter.values())
+
+    # 5. Графика: Възрастови групи
+    # Разделяме ги на: под 25, 25-40, 41-55, над 55
+    age_groups = {"под 25": 0, "25-40": 0, "41-55": 0, "над 55": 0}
+    for c in all_clicks:
+        if c.user and c.user.age:
+            age = c.user.age
+            if age < 25: age_groups["под 25"] += 1
+            elif 25 <= age <= 40: age_groups["25-40"] += 1
+            elif 41 <= age <= 55: age_groups["41-55"] += 1
+            else: age_groups["над 55"] += 1
+    age_labels = list(age_groups.keys())
+    age_values = list(age_groups.values())
+
+    # Данни за общия риск профил
     risk_labels = [u.email for u in all_users]
     risk_values = [u.risk_score or 0 for u in all_users]
 
@@ -200,12 +237,21 @@ def dashboard():
         click_rate=click_rate,
         open_rate=open_rate,
         high_risk_users=high_risk_users,
+        
+        # Подаваме новите данни към HTML шаблона
         chart_labels=chart_labels,
         clicks_data=clicks_data,
+        company_labels=company_labels,
+        company_values=company_values,
+        position_labels=position_labels,
+        position_values=position_values,
+        gender_labels=gender_labels,
+        gender_values=gender_values,
+        age_labels=age_labels,
+        age_values=age_values,
         risk_labels=risk_labels,
         risk_values=risk_values
     )
-
 
 # ---------------- USERS ----------------
 @app.route("/users")
