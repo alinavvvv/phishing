@@ -10,23 +10,31 @@
 
 <div class="d-flex justify-content-center align-items-center vh-100">
 
-    <form method="post" class="bg-white p-4 rounded shadow" style="width:320px;">
-        <h3 class="text-center mb-3">Вписване</h3>
+    <form method="post" class="bg-white p-5 rounded shadow" style="width: 100%; max-width: 460px;">
+        
+        <h2 class="text-center mb-4" style="font-weight: 600; color: #212529;">🔐 Вписване</h2>
 
         {% with messages = get_flashed_messages(with_categories=true, category_filter=["error"]) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-danger text-center p-2">
+                    <div class="alert alert-danger text-center p-2 mb-3">
                         {{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <input name="username" class="form-control mt-2" placeholder="Потребителско име" required>
-        <input name="password" type="password" class="form-control mt-2" placeholder="Парола" required>
+        <div class="mb-3">
+            <label class="form-label text-muted small">Потребителско име</label>
+            <input name="username" class="form-control form-control-lg" placeholder="admin" required>
+        </div>
 
-        <button class="btn btn-primary w-100 mt-3">Вход</button>
+        <div class="mb-4">
+            <label class="form-label text-muted small">Парола</label>
+            <input name="password" type="password" class="form-control form-control-lg" placeholder="Парола" required>
+        </div>
+
+        <button class="btn btn-primary btn-lg w-100 mt-2" style="border-radius: 8px;">Вход</button>
     </form>
 
 </div>
