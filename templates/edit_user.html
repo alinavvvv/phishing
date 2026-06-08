@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 600px;">
+    <h2>✏️ Редактиране на потребител</h2>
+    <p class="text-muted">Променете данните на служителя.</p>
+
+    <div class="card p-4 shadow-sm bg-white">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Име</label>
+                    <input type="text" name="first_name" class="form-control" value="{{ user.first_name or '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Фамилия</label>
+                    <input type="text" name="last_name" class="form-control" value="{{ user.last_name or '' }}">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Имейл адрес *</label>
+                <input type="email" name="email" class="form-control" value="{{ user.email }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Компания</label>
+                <input type="text" name="company" class="form-control" value="{{ user.company or '' }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Длъжност</label>
+                <input type="text" name="position" class="form-control" value="{{ user.position or '' }}">
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Възраст</label>
+                    <input type="number" name="age" class="form-control" value="{{ user.age or '' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Пол</label>
+                    <select name="gender" class="form-select">
+                        <option value="">-- Изберете --</option>
+                        <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Мъж</option>
+                        <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Жена</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{{ url_for('users') }}" class="btn btn-secondary">Отказ</a>
+                <button type="submit" class="btn btn-warning">Запази промените</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
