@@ -6,15 +6,21 @@ db = SQLAlchemy()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+
+    first_name = db.Column(db.String(100))
+    last_name = db.Column(db.String(100))
+
+    company = db.Column(db.String(200))
+    position = db.Column(db.String(200))
+
+    age = db.Column(db.Integer)
+    gender = db.Column(db.String(20))
+
+    email = db.Column(db.String(120), unique=True)
+
     risk_score = db.Column(db.Integer, default=0)
 
-    def click_rate(self):
-        total = len(self.email_events)
-        if total == 0:
-            return 0
-        clicked = len([e for e in self.email_events if e.clicked])
-        return round((clicked / total) * 100, 1)
+    clicks = db.relationship("Click", backref="user", lazy=True)
 
 
 class Campaign(db.Model):
