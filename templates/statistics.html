@@ -1,54 +1,118 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<h2>📈 Статистика и анализ</h2>
-<p class="text-muted">Графики за поведението и напредъка на потребителите.</p>
-
-<div class="row g-3">
-    <div class="col-md-6">
-        <div class="card shadow p-3">
-            <h5>Рисков резултат по потребители</h5>
-            <canvas id="riskChart"></canvas>
-        </div>
+<div class="container mt-4" style="max-width: 1200px;">
+    <div class="text-center mb-4">
+        <h2>📈 Статистика и анализ</h2>
+        <p class="text-muted">Графики за поведението и напредъка на потребителите</p>
     </div>
 
-    <div class="col-md-6">
-        <div class="card shadow p-3">
-            <h5>Процент на кликване по потребители</h5>
-            <canvas id="clickRateChart"></canvas>
+    <div class="card shadow-sm bg-white p-3 mb-4">
+        <label for="userFilter" class="form-label fw-bold text-secondary">🔍 Изберете служители за сравнение (Задръжте Ctrl / Cmd за избор на няколко):</label>
+        <select id="userFilter" class="form-select" multiple style="height: 120px;">
+            {% for u in all_users %}
+                <option value="{{ u.email }}" data-risk="{{ u.risk_score or 0 }}" data-clickrate="{{ (u.risk_score or 0) * 10 }}">
+                    {{ u.email }} (Риск: {{ u.risk_score or 0 }})
+                </option>
+            {% endfor %}
+        </select>
+        <div class="form-text text-end">Избраните служители ще се визуализират автоматично долу.</div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card p-3 shadow-sm bg-white">
+                <h5 class="card-title text-muted text-center">Рисков резултат по потребители</h5>
+                <canvas id="riskBarChart" style="max-height: 350px;"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card p-3 shadow-sm bg-white">
+                <h5 class="card-title text-muted text-center">Процент на кликване по потребители</h5>
+                <canvas id="clickRateBarChart" style="max-height: 350px;"></canvas>
+            </div>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const labels = {{ labels|tojson }};
-const riskScores = {{ risk_scores|tojson }};
-const clickRates = {{ click_rates|tojson }};
+    const userFilter = document.getElementById('userFilter');
+    
+    // Дефинираме двете графики глобално
+    let riskChart;
+    let clickRateChart;
 
-new Chart(document.getElementById('riskChart'), {
-    type: 'bar',
-    data: {
-        labels: labels,
-        datasets: [{
-            label: 'Рисков резултат',
-            data: riskScores
-        }]
-    }
-});
+    // Функция, която събира избраните данни и обновява графиките
+    function updateCharts() {
+        let labels = [];
+        let riskValues = [];
+        let clickRateValues = [];
 
-new Chart(document.getElementById('clickRateChart'), {
-    type: 'bar',
-    data: {
-        labels: labels,
-        datasets: [{
-            label: 'Click rate %',
-            data: clickRates
-        }]
+        // Вземаме само маркираните (селектирани) опции от менюто
+        const selectedOptions = Array.from(userFilter.selectedOptions);
+        
+        // Ако потребителят не е избрал нищо, показваме първите 5 по подразбиране
+        const optionsToDisplay = selectedOptions.length > 0 ? selectedOptions : Array.from(userFilter.options).slice(0, 5);
+
+        optionsToDisplay.forEach(option => {
+            labels.append(option.value);
+            riskValues.append(parseFloat(option.getAttribute('data-risk')));
+            clickRateValues.append(parseFloat(option.getAttribute('data-clickrate')));
+        });
+
+        // Обновяване на Графика 1 (Рисков резултат)
+        riskChart.data.labels = labels;
+        riskChart.data.datasets[0].data = riskValues;
+        riskChart.update();
+
+        // Обновяване на Графика 2 (Процент на кликване)
+        clickRateChart.data.labels = labels;
+        clickRateChart.data.datasets[0].data = clickRateValues;
+        clickRateChart.update();
     }
-});
+
+    // Инициализиране на празни графики при зареждане на страницата
+    document.addEventListener("DOMContentLoaded", function() {
+        // Графика 1
+        const ctx1 = document.getElementById('riskBarChart').getContext('2d');
+        riskChart = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Рисков резултат',
+                    data: [],
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 5 } } }
+        });
+
+        // Графика 2
+        const ctx2 = document.getElementById('clickRateBarChart').getContext('2d');
+        clickRateChart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Click rate %',
+                    data: [],
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 100 } } }
+        });
+
+        // Стартираме първоначалното зареждане на данните
+        updateCharts();
+
+        // Слушаме за промяна в избора (когато администраторът кликне на друг потребител)
+        userFilter.addEventListener('change', updateCharts);
+    });
 </script>
-
 {% endblock %}
