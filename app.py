@@ -269,7 +269,16 @@ def add_user():
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        email = request.form.get("email")
+        first_name = request.form.get("first_name")
+last_name = request.form.get("last_name")
+
+email = request.form.get("email")
+
+company = request.form.get("company")
+position = request.form.get("position")
+
+age = request.form.get("age")
+gender = request.form.get("gender")
 
         if not email:
             flash("Имейлът е задължителен.", "error")
