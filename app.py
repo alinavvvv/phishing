@@ -203,14 +203,17 @@ def dashboard():
     position_labels = list(position_counter.keys())
     position_values = list(position_counter.values())
 
-    # 4. Графика: Сравнение Мъже / Жени (Пол на подлъгалите се)
-    gender_counter = Counter()
+   # 4. Графика: Сравнение Мъже / Жени (Твърдо дефинираме подредбата)
+    gender_groups = {"Мъже": 0, "Жени": 0}
     for c in all_clicks:
         if c.user and c.user.gender:
-            gender_name = "Мъже" if c.user.gender == "male" else "Жени" if c.user.gender == "female" else c.user.gender
-            gender_counter[gender_name] += 1
-    gender_labels = list(gender_counter.keys())
-    gender_values = list(gender_counter.values())
+            if c.user.gender == "male":
+                gender_groups["Мъже"] += 1
+            elif c.user.gender == "female":
+                gender_groups["Жени"] += 1
+                
+    gender_labels = list(gender_groups.keys())   # Ще върне точно: ["Мъже", "Жени"]
+    gender_values = list(gender_groups.values()) # Ще върне броя съответно за тях
 
     # 5. Графика: Възрастови групи
     # Разделяме ги на: под 25, 25-40, 41-55, над 55
