@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f9; color: #333333;">
+
+    {% if open_pixel_url %}
+        <img src="{{ open_pixel_url }}" width="1" height="1" alt="" style="display:none; opacity:0;">
+    {% endif %}
+
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 30px auto; background-color: #ffffff; border: 1px solid #e1e6eb; border-radius: 8px;">
+        <tr>
+            <td bgcolor="#4b5563" style="padding: 15px 30px; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                <h2 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                    ⚙️ IT SUPPORT / КВOТА ЗА ПОЩА
+                </h2>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px 30px 20px 30px;">
+                <p style="font-size: 16px; margin-top: 0; font-weight: bold;">Внимание:</p>
+                <p style="font-size: 15px; line-height: 1.6; color: #555555;">
+                    Вашият корпоративен имейл акаунт е достигнал **98% от разрешеното дисково пространство** на облачния сървър. 
+                </p>
+                
+                <div style="width: 100%; background-color: #e5e7eb; border-radius: 10px; height: 20px; margin: 15px 0;">
+                    <div style="width: 98%; background-color: #ef4444; height: 20px; border-radius: 10px; text-align: right; color: white; font-size: 12px; font-weight: bold; line-height: 20px; padding-right: 5px;">98% </div>
+                </div>
+
+                <p style="font-size: 15px; line-height: 1.6; color: #555555;">
+                    Поради критичното препълване, получаването на нови съобщения и прикачени файлове ще бъде **преустановено след 4 часа**. За да избегнете загуба на важни бизнес имейли, стартирайте безплатното автоматично разширение на квотата веднага.
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" style="padding: 10px 30px 40px 30px;">
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td align="center" bgcolor="#4b5563" style="border-radius: 5px;">
+                            <a href="{{ link }}" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 15px; color: #ffffff; font-weight: bold; text-decoration: none; border-radius: 5px;">
+                                Увеличи дисковото пространство (+50 GB)
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 20px 30px; background-color: #f8f9fa; border-top: 1px solid #e1e6eb; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; text-align: center; font-size: 12px; color: #6c757d;">
+                Служебно съобщение от **Администратор "Облачни и мрежови услуги"**.
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
