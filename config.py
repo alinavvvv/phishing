@@ -15,5 +15,5 @@ class Config:
     SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
     SENDGRID_FROM_EMAIL = os.environ.get(
         "SENDGRID_FROM_EMAIL",
-        "noreply.security.training@gmail.com"
+        "noreply.security.education@gmail.com"
     )
