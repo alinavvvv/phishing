@@ -4,66 +4,67 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- 1. РЕД: Заглавие и Имейл заедно на един ред -->
 <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
     <h2 class="m-0">👤 Профил на потребител</h2>
     <h4 class="text-muted m-0">{{ user.email }}</h4>
 </div>
 
-<!-- Основна карта със статистиката -->
-<div class="card shadow p-4">
+<div class="card shadow p-4 mb-4">
     
-    <!-- 2. РЕД: Четирите цветни карти със статистическите данни -->
     <div class="row mt-2">
         <div class="col-md-3">
-            <div class="card p-3 bg-primary text-white shadow-sm">
+            <div class="card p-3 bg-primary text-white shadow-sm h-100">
                 <h6>Изпратени имейли</h6>
                 <h2>{{ sent_count }}</h2>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card p-3 bg-success text-white shadow-sm">
+            <div class="card p-3 bg-success text-white shadow-sm h-100">
                 <h6>Отворени имейли</h6>
                 <h2>{{ opened_count }}</h2>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card p-3 bg-danger text-white shadow-sm">
+            <div class="card p-3 bg-danger text-white shadow-sm h-100">
                 <h6>Кликове</h6>
                 <h2>{{ clicked_count }}</h2>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card p-3 bg-warning text-dark shadow-sm">
+            <div class="card p-3 bg-warning text-dark shadow-sm h-100">
                 <h6>Рисков резултат</h6>
                 <h2>{{ user.risk_score or 0 }}</h2>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 3. РЕД: Специфични показатели - отделно и изцяло на български език -->
-    <div class="card p-3 mt-4 bg-light border-0 shadow-sm">
-        <div class="row text-center text-md-start">
-            <div class="col-md-4 py-1">
-                <span class="text-secondary fw-semibold">Процент на отваряне:</span>
-                <span class="fs-5 fw-bold text-dark ms-2">{{ open_rate }}%</span>
-            </div>
-            <div class="col-md-4 py-1">
-                <span class="text-secondary fw-semibold">Процент на кликване:</span>
-                <span class="fs-5 fw-bold text-dark ms-2">{{ click_rate }}%</span>
-            </div>
-            <div class="col-md-4 py-1">
-                <span class="text-secondary fw-semibold">Завършени обучения:</span>
-                <span class="fs-5 fw-bold text-dark ms-2">{{ completed_count }}</span>
-            </div>
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card p-3 bg-light border-0 shadow-sm text-center">
+            <div class="text-secondary fw-semibold small text-uppercase mb-1">Процент на отваряне</div>
+            <div class="fs-4 fw-bold text-dark">{{ open_rate }}%</div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card p-3 bg-light border-0 shadow-sm text-center">
+            <div class="text-secondary fw-semibold small text-uppercase mb-1">Процент на кликване</div>
+            <div class="fs-4 fw-bold text-danger">{{ click_rate }}%</div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card p-3 bg-light border-0 shadow-sm text-center">
+            <div class="text-secondary fw-semibold small text-uppercase mb-1">Завършени обучения</div>
+            <div class="fs-4 fw-bold text-success">{{ completed_count }}</div>
         </div>
     </div>
 </div>
 
-<!-- Графика -->
 <div class="card shadow p-3 mt-4">
     <h5>Кликове за последните 14 дни</h5>
     <canvas id="userClicksChart"></canvas>
