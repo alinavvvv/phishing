@@ -500,52 +500,35 @@ def statistics():
     )
 
 
+
 # ---------------- FIX DATABASE ----------------
 @app.route("/fix-db")
 def fix_db():
     try:
         db.create_all()
 
+        # Списък с командите за добавяне на новите колони в PostgreSQL
         migrations = [
-            'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS risk_score INTEGER DEFAULT 0;',
-
-            'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS ip VARCHAR(100);',
-            'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS timestamp TIMESTAMP;',
-            'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS email_event_id INTEGER;',
-            'ALTER TABLE "click" ADD COLUMN IF NOT EXISTS user_agent VARCHAR(300);',
-
-            'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS name VARCHAR(150);',
-            'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS template_name VARCHAR(120) DEFAULT \'security_alert.html\';',
-            'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS frequency VARCHAR(50) DEFAULT \'manual\';',
-            'ALTER TABLE campaign ADD COLUMN IF NOT EXISTS created_at TIMESTAMP;',
-
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS user_id INTEGER;',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS campaign_id INTEGER;',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS token VARCHAR(120);',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP;',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(50) DEFAULT \'created\';',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS opened BOOLEAN DEFAULT FALSE;',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS opened_at TIMESTAMP;',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS open_count INTEGER DEFAULT 0;',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS clicked BOOLEAN DEFAULT FALSE;',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMP;',
-            'ALTER TABLE email_event ADD COLUMN IF NOT EXISTS click_count INTEGER DEFAULT 0;',
-
-            'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS user_id INTEGER;',
-            'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS email_event_id INTEGER;',
-            'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE;',
-            'ALTER TABLE training_progress ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP;'
+            'ALTER TABLE "user" ADD COLUMN first_name VARCHAR(100);',
+            'ALTER TABLE "user" ADD COLUMN last_name VARCHAR(100);',
+            'ALTER TABLE "user" ADD COLUMN company VARCHAR(150);',
+            'ALTER TABLE "user" ADD COLUMN position VARCHAR(150);',
+            'ALTER TABLE "user" ADD COLUMN age INTEGER;',
+            'ALTER TABLE "user" ADD COLUMN gender VARCHAR(50);'
         ]
 
         for command in migrations:
             try:
                 db.session.execute(text(command))
                 db.session.commit()
+                print(f"Успешно изпълнено: {command}")
             except Exception as e:
                 db.session.rollback()
-                print("MIGRATION ERROR:", e)
+                # Ако колоната вече съществува, PostgreSQL ще хвърли грешка, 
+                # която просто игнорираме и продължаваме напред
+                print(f"Пропуснато (вероятно съществува): {e}")
 
-        return "Базата е обновена успешно."
+        return "Базата данни беше проверена и обновена успешно! Сега можете да отворите /dashboard."
 
     except Exception as e:
         db.session.rollback()
