@@ -173,7 +173,7 @@ def dashboard():
 
     high_risk_users = len([u for u in all_users if (u.risk_score or 0) > 5])
 
-    # 1. Графика по седмици / дни (Последните 14 дни)
+    # 1. Хронология на кликванията (Тук остава общ брой кликове по дни, което е правилно)
     today = datetime.utcnow().date()
     chart_labels = []
     clicks_data = []
@@ -187,55 +187,53 @@ def dashboard():
         chart_labels.append(day.strftime("%d.%m"))
         clicks_data.append(click_dates.get(day, 0))
 
-    # 2. Графика: Сравнение по Компании (Кликвания по компании)
+    # Намираме уникалните потребители, които са кликнали поне веднъж
+    clicked_user_ids = db.session.query(Click.user_id).distinct().all()
+    clicked_user_ids = [uid[0] for uid in clicked_user_ids if uid[0] is not None]
+    
+    unique_clicked_users = []
+    for uid in clicked_user_ids:
+        u = db.session.get(User, uid)
+        if u:
+            unique_clicked_users.append(u)
+
+    # 2. Графика: Сравнение по Компании (Уникални хора)
     company_counter = Counter()
-    for c in all_clicks:
-        if c.user and c.user.company:
-            company_counter[c.user.company] += 1
+    for u in unique_clicked_users:
+        if u.company:
+            company_counter[u.company] += 1
     company_labels = list(company_counter.keys())
     company_values = list(company_counter.values())
 
-    # 3. Графика: Сравнение по Длъжности (Кликвания по длъжности)
+    # 3. Графика: Сравнение по Длъжности (Уникални хора)
     position_counter = Counter()
-    for c in all_clicks:
-        if c.user and c.user.position:
-            position_counter[c.user.position] += 1
+    for u in unique_clicked_users:
+        if u.position:
+            position_counter[u.position] += 1
     position_labels = list(position_counter.keys())
     position_values = list(position_counter.values())
 
-  # 4. Графика: Сравнение Мъже / Жени (Броим уникалните потребители, които са кликнали)
+    # 4. Графика: Сравнение Мъже / Жени (Уникални хора)
     gender_groups = {"Мъже": 0, "Жени": 0}
-    
-    # Вземаме уникалните ID-та на потребители, които имат записан клик
-    clicked_user_ids = db.session.query(Click.user_id).distinct().all()
-    # Превръщаме резултата в чист списък от числа: [1, 2, ...]
-    clicked_user_ids = [uid[0] for uid in clicked_user_ids if uid[0] is not None]
+    for u in unique_clicked_users:
+        if u.gender == "male":
+            gender_groups["Мъже"] += 1
+        elif u.gender == "female":
+            gender_groups["Жени"] += 1
+    gender_labels = list(gender_groups.keys())
+    gender_values = list(gender_groups.values())
 
-    for user_id in clicked_user_ids:
-        user = db.session.get(User, user_id)
-        if user and user.gender:
-            if user.gender == "male":
-                gender_groups["Мъже"] += 1
-            elif user.gender == "female":
-                gender_groups["Жени"] += 1
-                
-    gender_labels = list(gender_groups.keys())   # Точно: ["Мъже", "Жени"]
-    gender_values = list(gender_groups.values()) # Брой уникални хора
-
-    # 5. Графика: Възрастови групи
-    # Разделяме ги на: под 25, 25-40, 41-55, над 55
+    # 5. Графика: Възрастови групи (Уникални хора)
     age_groups = {"под 25": 0, "25-40": 0, "41-55": 0, "над 55": 0}
-    for c in all_clicks:
-        if c.user and c.user.age:
-            age = c.user.age
-            if age < 25: age_groups["под 25"] += 1
-            elif 25 <= age <= 40: age_groups["25-40"] += 1
-            elif 41 <= age <= 55: age_groups["41-55"] += 1
+    for u in unique_clicked_users:
+        if u.age:
+            if u.age < 25: age_groups["под 25"] += 1
+            elif 25 <= u.age <= 40: age_groups["25-40"] += 1
+            elif 41 <= u.age <= 55: age_groups["41-55"] += 1
             else: age_groups["над 55"] += 1
     age_labels = list(age_groups.keys())
     age_values = list(age_groups.values())
 
-    # Данни за общия риск профил
     risk_labels = [u.email for u in all_users]
     risk_values = [u.risk_score or 0 for u in all_users]
 
@@ -247,8 +245,6 @@ def dashboard():
         click_rate=click_rate,
         open_rate=open_rate,
         high_risk_users=high_risk_users,
-        
-        # Подаваме новите данни към HTML шаблона
         chart_labels=chart_labels,
         clicks_data=clicks_data,
         company_labels=company_labels,
