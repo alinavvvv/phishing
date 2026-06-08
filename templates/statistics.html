@@ -1,35 +1,39 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4" style="max-width: 1200px;">
-    <div class="text-center mb-4">
-        <h2>📈 Статистика и анализ</h2>
-        <p class="text-muted">Графики за поведението и напредъка на потребителите</p>
+<div class="container mt-5" style="max-width: 1200px;">
+    <div class="text-center mb-5">
+        <h2 class="display-6 fw-bold">📊 Статистика и сравнителен анализ</h2>
+        <p class="fs-5 text-muted">Изберете конкретни служители, за да сравните тяхното поведение и нива на риск</p>
     </div>
 
-    <div class="card shadow-sm bg-white p-3 mb-4">
-        <label for="userFilter" class="form-label fw-bold text-secondary">🔍 Изберете служители за сравнение (Задръжте Ctrl / Cmd за избор на няколко):</label>
-        <select id="userFilter" class="form-select" multiple style="height: 120px;">
-            {% for u in all_users %}
-                <option value="{{ u.email }}" data-risk="{{ u.risk_score or 0 }}" data-clickrate="{{ (u.risk_score or 0) * 10 }}">
-                    {{ u.email }} (Риск: {{ u.risk_score or 0 }})
-                </option>
-            {% endfor %}
-        </select>
-        <div class="form-text text-end">Избраните служители ще се визуализират автоматично долу.</div>
+    <div class="card shadow border-0 bg-white p-4 mb-5">
+        <form method="GET" action="{{ url_for('statistics') }}">
+            <label for="userFilter" class="form-label fw-bold text-secondary mb-2">
+                🔍 Филтър за сравнение (Задръжте Ctrl / Cmd за избор на няколко души):
+            </label>
+            <select id="userFilter" name="selected_users" class="form-select fs-5" multiple style="height: 150px; border-radius: 8px;" onchange="this.form.submit()">
+                {% for u in all_users %}
+                    <option value="{{ u.email }}" {% if u.email in selected_emails or (not selected_emails and loop.index <= 5) %}selected{% endif %}>
+                        📧 {{ u.email }} (Риск: {{ u.risk_score or 0 }})
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="form-text text-muted mt-2 text-end">Изберете служителите и страницата ще се обнови автоматично чрез Flask.</div>
+        </form>
     </div>
 
     <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card p-3 shadow-sm bg-white">
-                <h5 class="card-title text-muted text-center">Рисков резултат по потребители</h5>
-                <canvas id="riskBarChart" style="max-height: 350px;"></canvas>
+        <div class="col-lg-6 mb-4">
+            <div class="card p-4 shadow border-0 bg-white h-100">
+                <h5 class="fw-bold text-secondary text-center mb-4">Рисков резултат по потребители</h5>
+                <canvas id="riskBarChart" style="max-height: 380px;"></canvas>
             </div>
         </div>
-        <div class="col-md-6 mb-4">
-            <div class="card p-3 shadow-sm bg-white">
-                <h5 class="card-title text-muted text-center">Процент на кликване по потребители</h5>
-                <canvas id="clickRateBarChart" style="max-height: 350px;"></canvas>
+        <div class="col-lg-6 mb-4">
+            <div class="card p-4 shadow border-0 bg-white h-100">
+                <h5 class="fw-bold text-secondary text-center mb-4">Процент на кликване (Click Rate %)</h5>
+                <canvas id="clickRateBarChart" style="max-height: 380px;"></canvas>
             </div>
         </div>
     </div>
@@ -37,82 +41,44 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const userFilter = document.getElementById('userFilter');
-    
-    // Дефинираме двете графики глобално
-    let riskChart;
-    let clickRateChart;
-
-    // Функция, която събира избраните данни и обновява графиките
-    function updateCharts() {
-        let labels = [];
-        let riskValues = [];
-        let clickRateValues = [];
-
-        // Вземаме само маркираните (селектирани) опции от менюто
-        const selectedOptions = Array.from(userFilter.selectedOptions);
-        
-        // Ако потребителят не е избрал нищо, показваме първите 5 по подразбиране
-        const optionsToDisplay = selectedOptions.length > 0 ? selectedOptions : Array.from(userFilter.options).slice(0, 5);
-
-        optionsToDisplay.forEach(option => {
-            labels.append(option.value);
-            riskValues.append(parseFloat(option.getAttribute('data-risk')));
-            clickRateValues.append(parseFloat(option.getAttribute('data-clickrate')));
-        });
-
-        // Обновяване на Графика 1 (Рисков резултат)
-        riskChart.data.labels = labels;
-        riskChart.data.datasets[0].data = riskValues;
-        riskChart.update();
-
-        // Обновяване на Графика 2 (Процент на кликване)
-        clickRateChart.data.labels = labels;
-        clickRateChart.data.datasets[0].data = clickRateValues;
-        clickRateChart.update();
-    }
-
-    // Инициализиране на празни графики при зареждане на страницата
+    // Тук JavaScript-ът е изключително прост и служи само за визуализиране на готовите масиви от Python
     document.addEventListener("DOMContentLoaded", function() {
-        // Графика 1
-        const ctx1 = document.getElementById('riskBarChart').getContext('2d');
-        riskChart = new Chart(ctx1, {
+        
+        // Графика 1: Риск (Данните идват директно филтрирани от Flask чрез |tojson)
+        new Chart(document.getElementById('riskBarChart').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: [],
+                labels: {{ labels|tojson }},
                 datasets: [{
-                    label: 'Рисков резултат',
-                    data: [],
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
+                    label: 'Индекс на риск (0 - 5)',
+                    data: {{ risk_scores|tojson }},
+                    backgroundColor: '#36a2eb',
+                    borderRadius: 5
                 }]
             },
-            options: { scales: { y: { beginAtZero: true, max: 5 } } }
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, max: 5 } }
+            }
         });
 
-        // Графика 2
-        const ctx2 = document.getElementById('clickRateBarChart').getContext('2d');
-        clickRateChart = new Chart(ctx2, {
+        // Графика 2: Кликвания
+        new Chart(document.getElementById('clickRateBarChart').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: [],
+                labels: {{ labels|tojson }},
                 datasets: [{
-                    label: 'Click rate %',
-                    data: [],
-                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
+                    label: 'Процент на кликване (%)',
+                    data: {{ click_rates|tojson }},
+                    backgroundColor: '#ff6384',
+                    borderRadius: 5
                 }]
             },
-            options: { scales: { y: { beginAtZero: true, max: 100 } } }
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, max: 100 } }
+            }
         });
-
-        // Стартираме първоначалното зареждане на данните
-        updateCharts();
-
-        // Слушаме за промяна в избора (когато администраторът кликне на друг потребител)
-        userFilter.addEventListener('change', updateCharts);
     });
 </script>
 {% endblock %}
