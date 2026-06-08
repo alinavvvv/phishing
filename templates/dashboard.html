@@ -25,7 +25,7 @@
         </div>
         <div class="col-md-3">
             <div class="card bg-warning text-dark text-center p-3 shadow-sm">
-                <h6>⚠️ Висок риск служители</h6>
+                <h6>⚠️ Служители с висок риск </h6>
                 <h2>{{ high_risk_users }}</h2>
             </div>
         </div>
@@ -96,14 +96,22 @@
     });
 
     // 2. По Пол (Doughnut / Pie Chart)
+   // 2. По Пол (Doughnut / Pie Chart)
     new Chart(document.getElementById('genderChart'), {
         type: 'doughnut',
         data: {
             labels: {{ gender_labels|tojson }},
             datasets: [{
                 data: {{ gender_values|tojson }},
-                backgroundColor: ['#36a2eb', '#ff6384', '#cc65fe']
+                backgroundColor: ['#36a2eb', '#ff6384'] 
             }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom' // Премества легендата отдолу за по-добра симетрия
+                }
+            }
         }
     });
 
