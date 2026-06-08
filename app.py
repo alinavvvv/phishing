@@ -203,17 +203,24 @@ def dashboard():
     position_labels = list(position_counter.keys())
     position_values = list(position_counter.values())
 
-   # 4. Графика: Сравнение Мъже / Жени (Твърдо дефинираме подредбата)
+  # 4. Графика: Сравнение Мъже / Жени (Броим уникалните потребители, които са кликнали)
     gender_groups = {"Мъже": 0, "Жени": 0}
-    for c in all_clicks:
-        if c.user and c.user.gender:
-            if c.user.gender == "male":
+    
+    # Вземаме уникалните ID-та на потребители, които имат записан клик
+    clicked_user_ids = db.session.query(Click.user_id).distinct().all()
+    # Превръщаме резултата в чист списък от числа: [1, 2, ...]
+    clicked_user_ids = [uid[0] for uid in clicked_user_ids if uid[0] is not None]
+
+    for user_id in clicked_user_ids:
+        user = db.session.get(User, user_id)
+        if user and user.gender:
+            if user.gender == "male":
                 gender_groups["Мъже"] += 1
-            elif c.user.gender == "female":
+            elif user.gender == "female":
                 gender_groups["Жени"] += 1
                 
-    gender_labels = list(gender_groups.keys())   # Ще върне точно: ["Мъже", "Жени"]
-    gender_values = list(gender_groups.values()) # Ще върне броя съответно за тях
+    gender_labels = list(gender_groups.keys())   # Точно: ["Мъже", "Жени"]
+    gender_values = list(gender_groups.values()) # Брой уникални хора
 
     # 5. Графика: Възрастови групи
     # Разделяме ги на: под 25, 25-40, 41-55, над 55
