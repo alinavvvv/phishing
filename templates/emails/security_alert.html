@@ -1,44 +1,76 @@
 <!DOCTYPE html>
-<html lang="bg">
+<html>
 <head>
     <meta charset="UTF-8">
+    <title>Защитно предупреждение</title>
 </head>
-
-<body style="font-family: Arial, sans-serif; background:#f3f4f6; padding:30px;">
-
-<div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.08);">
-
-    <h2 style="color:#dc2626;">⚠ Сигнал за сигурност</h2>
-
-    <p>Здравейте,</p>
-
-    <p>
-        Засечена е активност, която изисква преглед в рамките на обучителната система
-        по киберсигурност.
-    </p>
-
-    <p>
-        Моля, отворете линка по-долу, за да продължите към обучителната страница.
-    </p>
-
-    <p style="margin-top:25px;">
-        <a href="{{ link }}"
-           style="background:#2563eb; color:white; padding:12px 20px; text-decoration:none; border-radius:6px;">
-            Отвори обучителна страница
-        </a>
-    </p>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333333;">
 
     {% if open_pixel_url %}
-        <img src="{{ open_pixel_url }}" width="1" height="1" style="display:none;">
+        <img src="{{ open_pixel_url }}" width="1" height="1" alt="" style="display:none; max-height:0px; max-width:0px; opacity:0;">
     {% endif %}
 
-    <hr style="margin-top:30px;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 30px auto; background-color: #ffffff; border: 1px solid #e1e6eb; border-radius: 8px; shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        
+        <tr>
+            <td bgcolor="#dc3545" style="padding: 15px 30px; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+                <h2 style="color: #ffffff; margin: 0; font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                    ⚠️ СИСТЕМНО ПРЕДУПРЕЖДЕНИЕ ЗА СИГУРНОСТ
+                </h2>
+            </td>
+        </tr>
 
-    <p style="font-size:12px; color:#6b7280;">
-        Това съобщение е част от упълномощена система за обучение по киберсигурност.
-    </p>
+        <tr>
+            <td style="padding: 30px 30px 20px 30px;">
+                <p style="font-size: 16px; line-height: 1.5; margin-top: 0;">
+                    Уважаеми служител,
+                </p>
+                <p style="font-size: 15px; line-height: 1.6; color: #555555;">
+                    Нашата автоматизирана система за киберсигурност засече **неоторизиран опит за влизане** във Вашия корпоративен акаунт от необичайно устройство и IP адрес извън пределите на страната.
+                </p>
+                
+                <table width="100%" style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; margin: 20px 0; font-size: 14px; color: #495057;">
+                    <tr>
+                        <td style="padding: 10px 15px; font-weight: bold; width: 35%;">Устройство:</td>
+                        <td style="padding: 10px 15px;">Linux Workstation (Chrome Mobile)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px 15px; font-weight: bold;">Местоположение:</td>
+                        <td style="padding: 10px 15px;">Unknown Location (VPN Server)</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px 15px; font-weight: bold;">Действие:</td>
+                        <td style="padding: 10px 15px; color: #dc3545; font-weight: bold;">Опит за достъп до база данни</td>
+                    </tr>
+                </table>
 
-</div>
+                <p style="font-size: 15px; line-height: 1.6; color: #555555;">
+                    За да защитите личните си данни и фирмената информация, се изисква **незабавно да потвърдите Вашата самоличност** и да прегледате активността по акаунта си в рамките на следващите 24 часа. В противен случай достъпът Ви ще бъде служебно блокиран.
+                </p>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="center" style="padding: 10px 30px 40px 30px;">
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td align="center" bgcolor="#0056b3" style="border-radius: 5px;">
+                            <a href="{{ link }}" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 16px; color: #ffffff; font-weight: bold; text-decoration: none; border-radius: 5px; letter-spacing: 0.5px;">
+                                Потвърди профила и защити акаунта
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <tr>
+            <td style="padding: 20px 30px; background-color: #f8f9fa; border-top: 1px solid #e1e6eb; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; text-align: center; font-size: 12px; color: #6c757d;">
+                Това е автоматично системно съобщение от **Отдел "Информационна сигурност" (SOC)**.<br>
+                Моля, не отговаряйте директно на този имейл.
+            </td>
+        </tr>
+    </table>
 
 </body>
 </html>
