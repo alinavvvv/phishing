@@ -223,7 +223,10 @@ def user_detail(user_id):
     if not admin_required():
         return redirect(url_for("login"))
 
-    user = User.query.get_or_404(user_id)
+    user = db.session.get(User, user_id)
+    if not user:
+        flash("Потребителят не е намерен.", "error")
+        return redirect(url_for("users"))
 
     sent_count = EmailEvent.query.filter_by(user_id=user.id).count()
     clicked_count = EmailEvent.query.filter_by(user_id=user.id, clicked=True).count()
@@ -269,7 +272,6 @@ def add_user():
         return redirect(url_for("login"))
         
     if request.method == "POST":
-        # Взимане на данните от формата (с поправена индентация)
         first_name = request.form.get("first_name")
         last_name = request.form.get("last_name")
         email = request.form.get("email")
@@ -288,14 +290,13 @@ def add_user():
             return redirect(url_for("users"))
             
         try:
-            # Създаване на потребителя с всички подадени полета
             user = User(
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
                 company=company,
                 position=position,
-                age=int(age) if age else None,
+                age=int(age) if age and age.strip() else None,
                 gender=gender,
                 risk_score=0
             )
@@ -310,13 +311,49 @@ def add_user():
         return redirect(url_for("users"))
         
     return render_template("add_user.html")
+
+
+# ---------------- EDIT USER ----------------
+@app.route("/edit_user/<int:user_id>", methods=["GET", "POST"])
+def edit_user(user_id):
+    if not admin_required():
+        return redirect(url_for("login"))
+        
+    user = db.session.get(User, user_id)
+    if not user:
+        flash("Потребителят не е намерен.", "error")
+        return redirect(url_for("users"))
+        
+    if request.method == "POST":
+        user.first_name = request.form.get("first_name")
+        user.last_name = request.form.get("last_name")
+        user.email = request.form.get("email")
+        user.company = request.form.get("company")
+        user.position = request.form.get("position")
+        
+        age = request.form.get("age")
+        user.age = int(age) if age and age.strip() else None
+        user.gender = request.form.get("gender")
+        
+        try:
+            db.session.commit()
+            flash("Потребителят беше редактиран успешно.", "success")
+            return redirect(url_for("users"))
+        except Exception as e:
+            db.session.rollback()
+            print("EDIT ERROR:", e)
+            flash("Грешка при редактирането на потребителя.", "error")
+            
+    return render_template("edit_user.html", user=user)
+
+
 # ---------------- SEND EMAIL TO ONE USER ----------------
 @app.route("/send/<int:user_id>")
 def send(user_id):
     if not admin_required():
         return redirect(url_for("login"))
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
 
     if not user:
         flash("Потребителят не е намерен.", "error")
@@ -377,7 +414,11 @@ def send_campaign(campaign_id):
     if not admin_required():
         return redirect(url_for("login"))
 
-    campaign = Campaign.query.get_or_404(campaign_id)
+    campaign = db.session.get(Campaign, campaign_id)
+    if not campaign:
+        flash("Кампанията не е намерена.", "error")
+        return redirect(url_for("campaigns"))
+
     all_users = User.query.all()
 
     sent = 0
@@ -500,14 +541,12 @@ def statistics():
     )
 
 
-
 # ---------------- FIX DATABASE ----------------
 @app.route("/fix-db")
 def fix_db():
     try:
         db.create_all()
 
-        # Списък с командите за добавяне на новите колони в PostgreSQL
         migrations = [
             'ALTER TABLE "user" ADD COLUMN first_name VARCHAR(100);',
             'ALTER TABLE "user" ADD COLUMN last_name VARCHAR(100);',
@@ -524,8 +563,6 @@ def fix_db():
                 print(f"Успешно изпълнено: {command}")
             except Exception as e:
                 db.session.rollback()
-                # Ако колоната вече съществува, PostgreSQL ще хвърли грешка, 
-                # която просто игнорираме и продължаваме напред
                 print(f"Пропуснато (вероятно съществува): {e}")
 
         return "Базата данни беше проверена и обновена успешно! Сега можете да отворите /dashboard."
