@@ -587,25 +587,37 @@ def clicks():
 
 
 # ---------------- STATISTICS ----------------
-@app.route("/statistics")
+@app.route("/statistics", methods=["GET"])
 def statistics():
     if not admin_required():
         return redirect(url_for("login"))
 
+    # 1. Взимаме всички потребители от базата данни (за да заредим менюто)
     all_users = User.query.all()
 
-    labels = [u.email for u in all_users]
-    risk_scores = [u.risk_score or 0 for u in all_users]
-    click_rates = [u.click_rate() for u in all_users]
+    # 2. Проверяваме дали администраторът е избрал конкретни хора от филтъра
+    selected_emails = request.args.getlist("selected_users")
+
+    # 3. Логика по подразбиране: ако нищо не е избрано още, показваме първите 5 души
+    if not selected_emails and all_users:
+        filtered_users = all_users[:5]
+    else:
+        # Филтрираме само хората, чиито имейли са в списъка с избрани
+        filtered_users = [u for u in all_users if u.email in selected_emails]
+
+    # 4. Генерираме данните за графиките САМО за избраните/филтрираните хора
+    labels = [u.email for u in filtered_users]
+    risk_scores = [u.risk_score or 0 for u in filtered_users]
+    click_rates = [u.click_rate() for u in filtered_users]
 
     return render_template(
         "statistics.html",
-        labels=labels,
-        risk_scores=risk_scores,
-        click_rates=click_rates,
-        all_users=all_users  
+        all_users=all_users,          # Пращаме всички за падащото меню
+        selected_emails=selected_emails, # Пращаме маркираните, за да знаем кои са били избрани
+        labels=labels,                # Филтрирани за Графика 1
+        risk_scores=risk_scores,      # Филтрирани за Графика 1
+        click_rates=click_rates       # Филтрирани за Графика 2
     )
-
 # ---------------- FIX DATABASE ----------------
 @app.route("/fix-db")
 def fix_db():
