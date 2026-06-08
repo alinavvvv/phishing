@@ -16,7 +16,7 @@ def send_training_email(user, link, campaign=None, open_pixel_url=None):
     message = Mail(
         from_email=os.environ.get(
             "SENDGRID_FROM_EMAIL",
-            "noreply.security.training@gmail.com"
+            "noreply.security.education@gmail.com"
         ),
         to_emails=user.email,
         subject="Обучение по киберсигурност",
